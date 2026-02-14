@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm electron:dev:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(node:*)",
+      "Bash(npx electron --version)",
+      "Bash(\"D:\\\\ai\\\\clawd\\\\openclaw-main\\\\node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" --version)",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" -e \"console.log\\(''electron version:'', process.versions.electron, ''node:'', process.versions.node\\)\")",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" electron/main.cjs)",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" electron/test.cjs)",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" ./electron/)",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" electron/test2.cjs)",
+      "Bash(set ELECTRON_RUN_AS_NODE=:*)",
+      "Bash(\"node_modules\\\\.pnpm\\\\electron@40.1.0\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" -e \"console.log\\(''type:'', process.type\\)\")",
+      "Bash(tasklist:*)",
+      "Bash(ls:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

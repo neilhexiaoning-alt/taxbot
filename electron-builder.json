@@ -1,0 +1,73 @@
+{
+  "appId": "com.openclaw.taxchat",
+  "productName": "智税宝",
+  "copyright": "Copyright © 2026",
+  "extraMetadata": {
+    "main": "electron/main.cjs",
+    "dependencies": {}
+  },
+  "asar": false,
+  "compression": "store",
+  "npmRebuild": false,
+  "afterPack": "./scripts/fix-pnpm-links.cjs",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "electron/**/*",
+    "dist/**/*",
+    "openclaw.mjs",
+    "scripts/run-node.mjs",
+    "skills/**/*",
+    "packages/**/*",
+    "node_modules/**/*",
+    "!dist/OpenClaw.app",
+    "!**/*.ts",
+    "!**/*.map",
+    "!**/test/**",
+    "!**/*.test.js"
+  ],
+  "extraResources": [
+    {
+      "from": "ui/assets",
+      "to": "assets"
+    }
+  ],
+  "win": {
+    "icon": "ui/assets/icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "TaxChat",
+    "installerIcon": "ui/assets/icon.ico",
+    "uninstallerIcon": "ui/assets/icon.ico",
+    "deleteAppDataOnUninstall": false,
+    "displayLanguageSelector": false,
+    "language": "2052",
+    "perMachine": false
+  },
+  "portable": {
+    "artifactName": "${productName}-${version}-portable.exe"
+  },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "category": "public.app-category.finance"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Office"
+  },
+  "publish": null
+}

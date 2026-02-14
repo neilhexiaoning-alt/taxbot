@@ -1,0 +1,84 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient -->
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#3BB8F0"/>
+      <stop offset="100%" stop-color="#0077CC"/>
+    </radialGradient>
+    <!-- Eye glow -->
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7DF9FF"/>
+      <stop offset="70%" stop-color="#00E5CC"/>
+      <stop offset="100%" stop-color="#009999"/>
+    </radialGradient>
+    <!-- Face gradient -->
+    <linearGradient id="faceGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8EEF2"/>
+    </linearGradient>
+    <!-- Cap gradient -->
+    <linearGradient id="capGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2C3E50"/>
+      <stop offset="100%" stop-color="#1A252F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Blue circle background -->
+  <circle cx="100" cy="100" r="96" fill="url(#bg)"/>
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#2EA8E0" stroke-width="2" opacity="0.5"/>
+
+  <!-- Robot body / torso hint -->
+  <rect x="70" y="130" width="60" height="22" rx="8" fill="url(#faceGrad)" stroke="#D0D8E0" stroke-width="1"/>
+  <!-- Neck -->
+  <rect x="88" y="124" width="24" height="12" rx="4" fill="#E8EEF2" stroke="#D0D8E0" stroke-width="0.5"/>
+
+  <!-- Robot head -->
+  <rect x="52" y="58" width="96" height="70" rx="22" fill="url(#faceGrad)" stroke="#D0D8E0" stroke-width="1.5"/>
+
+  <!-- Ear pieces -->
+  <rect x="40" y="78" width="14" height="24" rx="5" fill="#E0E6EC" stroke="#C8D0D8" stroke-width="1"/>
+  <rect x="146" y="78" width="14" height="24" rx="5" fill="#E0E6EC" stroke="#C8D0D8" stroke-width="1"/>
+  <!-- Ear lights -->
+  <rect x="43" y="85" width="8" height="4" rx="2" fill="#00E5CC" opacity="0.7"/>
+  <rect x="149" y="85" width="8" height="4" rx="2" fill="#00E5CC" opacity="0.7"/>
+
+  <!-- Eyes -->
+  <ellipse cx="78" cy="95" rx="14" ry="16" fill="#1A252F"/>
+  <ellipse cx="122" cy="95" rx="14" ry="16" fill="#1A252F"/>
+  <!-- Eye inner glow -->
+  <ellipse cx="78" cy="95" rx="11" ry="13" fill="url(#eyeGlow)"/>
+  <ellipse cx="122" cy="95" rx="11" ry="13" fill="url(#eyeGlow)"/>
+  <!-- Eye highlights -->
+  <ellipse cx="73" cy="89" rx="4" ry="5" fill="white" opacity="0.6"/>
+  <ellipse cx="117" cy="89" rx="4" ry="5" fill="white" opacity="0.6"/>
+
+  <!-- Mouth - subtle smile -->
+  <path d="M88 112 Q100 120 112 112" fill="none" stroke="#B0BEC5" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Graduation cap board -->
+  <polygon points="100,42 148,56 100,62 52,56" fill="url(#capGrad)"/>
+  <!-- Cap top block -->
+  <rect x="72" y="46" width="56" height="16" rx="2" fill="url(#capGrad)"/>
+  <!-- Cap button on top -->
+  <circle cx="100" cy="44" r="4" fill="#2C3E50"/>
+
+  <!-- Tassel string -->
+  <path d="M100,44 Q108,44 132,38 Q140,36 144,46" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Tassel end -->
+  <path d="M142,44 L146,56 L140,56 Z" fill="#E74C3C"/>
+  <rect x="139" y="56" width="8" height="8" rx="1" fill="#C0392B"/>
+
+  <!-- Sparkle stars -->
+  <g fill="white" opacity="0.8">
+    <polygon points="38,40 40,36 42,40 40,44" transform="scale(0.7) translate(10,10)"/>
+    <polygon points="165,32 167,28 169,32 167,36" transform="scale(0.8) translate(10,8)"/>
+    <circle cx="152" cy="38" r="2"/>
+    <circle cx="42" cy="46" r="1.5"/>
+    <circle cx="160" cy="48" r="1.2"/>
+  </g>
+
+  <!-- "智税宝" text -->
+  <text x="100" y="170" font-family="Microsoft YaHei, SimHei, PingFang SC, sans-serif"
+        font-size="22" font-weight="bold" fill="white" text-anchor="middle"
+        letter-spacing="4">智税宝</text>
+</svg>
