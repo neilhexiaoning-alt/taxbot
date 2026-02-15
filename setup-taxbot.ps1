@@ -400,7 +400,7 @@ function Do-Install {
             "id": "MiniMax-M2.5",
             "name": "MiniMax M2.5 (Tool-Calling)",
             "reasoning": false,
-            "input": ["text"],
+            "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 204800,
             "maxTokens": 8192
