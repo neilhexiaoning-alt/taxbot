@@ -88,8 +88,9 @@ for ($i = 0; $i -lt $script:stepNames.Count; $i++) {
   $stepY += 26
 }
 
-# ---- API Key (hardcoded, hidden from user) ----
-$script:hardcodedApiKey = "sk-5786fd93bef34d75b214d50159550325"
+# ---- API Keys (hardcoded, hidden from user) ----
+$script:minimaxApiKey = "sk-cp-n3XEMT92KQwkIndjyL2WjZtLCXvFAC4BFw8mQLJzRdeepNJoeMlAiAu_Yw5HdRbcSLyE1Y_znPWpjwsqMrq3W-XxrkpXhKnO9DbMHOWpeuB2AAAbrqJ_BgM"
+$script:qwenApiKey = "sk-5786fd93bef34d75b214d50159550325"
 
 # ---- Log area ----
 $logBox = New-Object System.Windows.Forms.TextBox
@@ -349,7 +350,8 @@ function Do-Install {
     }
 
     $configFile = Join-Path $openclawDir 'openclaw.json'
-    $apiKey = $script:hardcodedApiKey
+    $mmKey = $script:minimaxApiKey
+    $qwKey = $script:qwenApiKey
 
     $tokenBytes = New-Object byte[] 24
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($tokenBytes)
@@ -373,10 +375,10 @@ function Do-Install {
     "defaults": {
       "workspace": "~/.openclaw/workspace",
       "model": {
-        "primary": "qwen/qwen-max"
+        "primary": "minimax/MiniMax-M2.5"
       },
       "imageModel": {
-        "primary": "qwen/qwen-vl-max"
+        "primary": "dashscope/qwen-vl-max"
       },
       "compaction": {
         "mode": "safeguard",
@@ -389,25 +391,32 @@ function Do-Install {
   "models": {
     "mode": "merge",
     "providers": {
-      "qwen": {
-        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "apiKey": "$apiKey",
+      "minimax": {
+        "baseUrl": "https://api.minimax.io/v1",
+        "apiKey": "$mmKey",
         "api": "openai-completions",
         "models": [
           {
-            "id": "qwen-max",
-            "name": "Qwen Max (Tool-Calling)",
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax M2.5 (Tool-Calling)",
             "reasoning": false,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 32000,
+            "contextWindow": 204800,
             "maxTokens": 8192
-          },
+          }
+        ]
+      },
+      "dashscope": {
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "apiKey": "$qwKey",
+        "api": "openai-completions",
+        "models": [
           {
             "id": "qwen-vl-max",
             "name": "Qwen VL Max (Vision)",
             "reasoning": false,
-            "input": ["text", "image"],
+            "input": ["image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 32000,
             "maxTokens": 8192

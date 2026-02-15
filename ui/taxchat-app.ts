@@ -936,11 +936,18 @@ async function connectGateway() {
             return;
           }
 
-          // Tools done — fetch complete response with stabilization
+          // If the final event already carries good text, finish immediately
+          // instead of polling chat.history (saves 800ms-26s of delay).
           const runId = state.currentRunId || payload.runId;
-          state.thinkingLabel = "正在整理回复...";
-          fetchCompleteResponse(runId);
-          renderApp();
+          if (inlineText && !isBadResponse(inlineText)) {
+            console.log("[final] Inline text is good, finishing immediately (skip polling)");
+            finishSending();
+          } else {
+            console.log("[final] No good inline text, falling back to polling");
+            state.thinkingLabel = "正在整理回复...";
+            fetchCompleteResponse(runId);
+            renderApp();
+          }
         }
 
         // Handle error state
@@ -1021,8 +1028,11 @@ function toolLabelMap(toolName: string): string {
 }
 
 function stripThinkingTags(text: string): string {
-  // Remove <thinking>...</thinking> tags and their content
+  // Remove <thinking>...</thinking> and <think>...</think> tags and their content
   let cleaned = text.replace(/<thinking>[\s\S]*?<\/thinking>\n?/g, "").trim();
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>\n?/g, "").trim();
+  // Strip <final> tag markers (keep inner content)
+  cleaned = cleaned.replace(/<\/?final>/g, "").trim();
   // Strip leading "NO" only when followed by actual content (qwen-max quirk)
   cleaned = cleaned.replace(/^NO\n\n/i, "");
   return cleaned;

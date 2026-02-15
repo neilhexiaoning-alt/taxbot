@@ -27,8 +27,11 @@ export function isReasoningTagProvider(provider: string | undefined | null): boo
     return true;
   }
 
-  // Handle Minimax (M2.1 is chatty/reasoning-like)
-  if (normalized.includes("minimax")) {
+  // Minimax M2.5 natively supports reasoning via API-level content blocks
+  // (type:"thinking"), so it does NOT need explicit <think>/<final> tag
+  // instructions in the system prompt.  Only minimax-portal (browser auth)
+  // might still need them.
+  if (normalized === "minimax-portal") {
     return true;
   }
 

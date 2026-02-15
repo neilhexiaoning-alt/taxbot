@@ -4438,9 +4438,15 @@ async function connectGateway() {
             return;
           }
           const runId = state.currentRunId || payload.runId;
-          state.thinkingLabel = "\u6B63\u5728\u6574\u7406\u56DE\u590D...";
-          fetchCompleteResponse(runId);
-          renderApp();
+          if (inlineText && !isBadResponse(inlineText)) {
+            console.log("[final] Inline text is good, finishing immediately (skip polling)");
+            finishSending();
+          } else {
+            console.log("[final] No good inline text, falling back to polling");
+            state.thinkingLabel = "\u6B63\u5728\u6574\u7406\u56DE\u590D...";
+            fetchCompleteResponse(runId);
+            renderApp();
+          }
         }
         if (payload.state === "error") {
           const errorText = payload.errorMessage || "\u5904\u7406\u8BF7\u6C42\u65F6\u51FA\u9519";
@@ -4506,6 +4512,8 @@ function toolLabelMap(toolName) {
 }
 function stripThinkingTags(text2) {
   let cleaned = text2.replace(/<thinking>[\s\S]*?<\/thinking>\n?/g, "").trim();
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>\n?/g, "").trim();
+  cleaned = cleaned.replace(/<\/?final>/g, "").trim();
   cleaned = cleaned.replace(/^NO\n\n/i, "");
   return cleaned;
 }

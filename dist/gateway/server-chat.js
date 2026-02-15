@@ -90,6 +90,7 @@ export function createAgentEventHandler({ broadcast, nodeSendToSession, agentRun
     // accumulate correctly without garbling.
     const turnBases = new Map();
     const emitChatDelta = (sessionKey, clientRunId, seq, text) => {
+        console.log(`[chat-delta] sessionKey=${sessionKey} textLen=${text?.length ?? 0} seq=${seq} runId=${clientRunId?.slice(0, 8)}`);
         const prevBuffer = chatRunState.buffers.get(clientRunId) ?? "";
         const base = turnBases.get(clientRunId) ?? "";
         // Compare new text against just the CURRENT turn's text (not the full buffer)
@@ -136,6 +137,7 @@ export function createAgentEventHandler({ broadcast, nodeSendToSession, agentRun
     };
     const emitChatFinal = (sessionKey, clientRunId, seq, jobState, error) => {
         const text = chatRunState.buffers.get(clientRunId)?.trim() ?? "";
+        console.log(`[chat-final] sessionKey=${sessionKey} state=${jobState} textLen=${text.length} seq=${seq} runId=${clientRunId?.slice(0, 8)} error=${error ? "yes" : "no"}`);
         chatRunState.buffers.delete(clientRunId);
         chatRunState.deltaSentAt.delete(clientRunId);
         turnBases.delete(clientRunId);
@@ -197,6 +199,12 @@ export function createAgentEventHandler({ broadcast, nodeSendToSession, agentRun
         const sessionKey = chatLink?.sessionKey ?? resolveSessionKeyForRun(evt.runId);
         const clientRunId = chatLink?.clientRunId ?? evt.runId;
         const isAborted = chatRunState.abortedRuns.has(clientRunId) || chatRunState.abortedRuns.has(evt.runId);
+        // Diagnostic: trace assistant and lifecycle events for debugging UI display issues
+        if (evt.stream === "assistant" || evt.stream === "lifecycle") {
+            const textLen = typeof evt.data?.text === "string" ? evt.data.text.length : -1;
+            const phase = evt.data?.phase ?? "";
+            console.log(`[chat-event-trace] stream=${evt.stream} seq=${evt.seq} sessionKey=${sessionKey ?? "NONE"} chatLink=${!!chatLink} isAborted=${isAborted} textLen=${textLen} phase=${phase} runId=${evt.runId?.slice(0, 8)}`);
+        }
         // Include sessionKey so Control UI can filter tool streams per session.
         const agentPayload = sessionKey ? { ...evt, sessionKey } : evt;
         const last = agentRunSeq.get(evt.runId) ?? 0;
