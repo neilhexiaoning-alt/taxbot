@@ -103,11 +103,12 @@ interface AppState {
   toastTimer: ReturnType<typeof setTimeout> | null;
   notifications: NotificationEntry[];
   panelTab: "favorites" | "notifications";
-  knowledgeTab: "files" | "skills";
   customSkills: CustomSkill[];
   editingSkill: CustomSkill | null;
   activeCustomSkill: CustomSkill | null; // skill prompt bubble shown above input
   showKnowledge: boolean;
+  showSkills: boolean;
+  showStatusMenu: boolean;
   knowledgeFiles: Array<{ name: string; size: number; ext: string; type: string; mtime?: number }>;
   knowledgeRefs: Array<{ name: string }>; // files referenced for next message
   knowledgeDragOver: boolean;
@@ -592,8 +593,9 @@ function handleCustomSkillClick(skill: CustomSkill) {
   if (!state.draft.startsWith(tag)) {
     state.draft = tag + (state.draft ? " " + state.draft : "");
   }
-  // Close the panel so user sees the prompt bubble
+  // Close panels so user sees the prompt bubble
   state.showFavorites = false;
+  state.showSkills = false;
   renderApp();
   setTimeout(() => { state.inputRef?.focus(); }, 50);
 }
@@ -708,11 +710,12 @@ const state: AppState = {
   toastTimer: null,
   notifications: loadNotifications(),
   panelTab: "favorites" as const,
-  knowledgeTab: "files" as const,
   customSkills: loadCustomSkills(),
   editingSkill: null,
   activeCustomSkill: null,
   showKnowledge: false,
+  showSkills: false,
+  showStatusMenu: false,
   knowledgeFiles: [],
   knowledgeRefs: [],
   knowledgeDragOver: false,
@@ -1975,18 +1978,31 @@ function renderApp() {
               <img src="./assets/taxchat-logo.png" alt="智税宝" />
             </div>
             <h1>智税宝</h1>
-            <div class="taxchat-header__status">
-              <span class="status-dot ${statusClass}"></span> ${statusText}
+            <div class="taxchat-header__status" @click=${(e: Event) => { e.stopPropagation(); state.showStatusMenu = !state.showStatusMenu; renderApp(); }}>
+              <span class="status-dot ${statusClass}"></span> ${statusText} <span class="status-arrow">▾</span>
+              ${state.showStatusMenu ? html`
+                <div class="status-menu" @click=${(e: Event) => e.stopPropagation()}>
+                  ${state.connected ? html`
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = (window as any).electronAPI; if (api?.restartGateway) api.restartGateway(); setTimeout(() => connectGateway(), 2000); renderApp(); }}>重连 Gateway</div>
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = (window as any).electronAPI; if (api?.stopGateway) api.stopGateway(); state.connected = false; cancelReconnect(); renderApp(); }}>关闭 Gateway</div>
+                  ` : html`
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = (window as any).electronAPI; if (api?.startGateway) api.startGateway(); setTimeout(() => connectGateway(), 2000); renderApp(); }}>连接 Gateway</div>
+                  `}
+                </div>
+              ` : ""}
             </div>
           </div>
         </div>
         <div class="taxchat-header__right">
-          <button class="favorites-toggle-btn ${state.showFavorites ? "active" : ""}" @click=${() => { state.showFavorites = !state.showFavorites; state.showKnowledge = false; renderApp(); }} title="收藏夹">
+          <button class="favorites-toggle-btn ${state.showFavorites ? "active" : ""}" @click=${() => { state.showFavorites = !state.showFavorites; state.showKnowledge = false; state.showSkills = false; renderApp(); }} title="收藏夹">
             <span>⭐</span>
             ${state.favorites.size > 0 ? html`<span class="fav-badge">${state.favorites.size}</span>` : ""}
           </button>
-          <button class="knowledge-toggle-btn ${state.showKnowledge ? "active" : ""}" @click=${() => { state.showKnowledge = !state.showKnowledge; state.showFavorites = false; if (state.showKnowledge) loadKnowledgeFiles(); renderApp(); }} title="知识库">
+          <button class="knowledge-toggle-btn ${state.showKnowledge ? "active" : ""}" @click=${() => { state.showKnowledge = !state.showKnowledge; state.showFavorites = false; state.showSkills = false; if (state.showKnowledge) loadKnowledgeFiles(); renderApp(); }} title="知识库">
             知识库
+          </button>
+          <button class="knowledge-toggle-btn ${state.showSkills ? "active" : ""}" @click=${() => { state.showSkills = !state.showSkills; state.showFavorites = false; state.showKnowledge = false; renderApp(); }} title="技能管理">
+            技能
           </button>
         </div>
       </header>
@@ -2051,7 +2067,7 @@ function renderApp() {
               if (!state.authorizedFolder) {
                 showToast("请先在知识库面板中选择文件夹");
                 state.showKnowledge = true;
-                state.knowledgeTab = "files";
+                state.showSkills = false;
                 renderApp();
                 return;
               }
@@ -2282,17 +2298,9 @@ function renderApp() {
 
         <div class="knowledge-panel ${state.showKnowledge ? "open" : ""}">
           <div class="knowledge-panel__header">
-            <div class="panel-tabs">
-              <button class="panel-tab ${state.knowledgeTab === "files" ? "active" : ""}" @click=${() => { state.knowledgeTab = "files"; renderApp(); }}>
-                <span>📂</span> 知识库
-              </button>
-              <button class="panel-tab ${state.knowledgeTab === "skills" ? "active" : ""}" @click=${() => { state.knowledgeTab = "skills"; renderApp(); }}>
-                <span>🛠</span> 自定义技能
-              </button>
-            </div>
+            <span class="panel-title">📂 知识库</span>
             <button class="favorites-panel__close" @click=${() => { state.showKnowledge = false; renderApp(); }}>✕</button>
           </div>
-          ${state.knowledgeTab === "files" ? html`
           <div class="knowledge-panel__body"
             @dragover=${(e: DragEvent) => { e.preventDefault(); e.stopPropagation(); }}
             @dragenter=${(e: DragEvent) => { e.preventDefault(); e.stopPropagation(); knowledgeDragCounter++; if (!state.knowledgeDragOver) { state.knowledgeDragOver = true; renderApp(); } }}
@@ -2338,8 +2346,14 @@ function renderApp() {
               `)}
             `}
           </div>
-          ` : html`
-          <div class="knowledge-panel__body">
+        </div>
+
+        <div class="skills-panel ${state.showSkills ? "open" : ""}">
+          <div class="skills-panel__header">
+            <span class="panel-title">🛠 技能管理</span>
+            <button class="favorites-panel__close" @click=${() => { state.showSkills = false; renderApp(); }}>✕</button>
+          </div>
+          <div class="skills-panel__body">
             <div class="skill-section-header" @click=${() => { state.builtinSkillsCollapsed = !state.builtinSkillsCollapsed; renderApp(); }}>
               <span class="skill-section-arrow ${state.builtinSkillsCollapsed ? "collapsed" : ""}">▾</span>
               <span class="skill-section-label">预制技能</span>
@@ -2385,7 +2399,6 @@ function renderApp() {
               `)
             }
           </div>
-          `}
         </div>
       </div><!-- /taxchat-body -->
 
@@ -3014,6 +3027,14 @@ function registerManagedSkillsListener() {
 }
 
 // Intercept link clicks in messages to open file paths and URLs via Electron
+// Close status menu on outside click
+document.addEventListener("click", () => {
+  if (state.showStatusMenu) {
+    state.showStatusMenu = false;
+    renderApp();
+  }
+});
+
 document.addEventListener("click", (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   const anchor = target.closest("a") as HTMLAnchorElement | null;

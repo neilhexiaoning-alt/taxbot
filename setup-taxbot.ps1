@@ -37,7 +37,7 @@ $script:installState = "ready"  # ready | running | done | error
 # ============ Build main form ============
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "TaxBot Setup"
-$form.Size = New-Object System.Drawing.Size(580, 520)
+$form.Size = New-Object System.Drawing.Size(580, 610)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -88,16 +88,66 @@ for ($i = 0; $i -lt $script:stepNames.Count; $i++) {
   $stepY += 26
 }
 
-# ---- API Keys (hardcoded, hidden from user) ----
-$script:minimaxApiKey = "sk-cp-n3XEMT92KQwkIndjyL2WjZtLCXvFAC4BFw8mQLJzRdeepNJoeMlAiAu_Yw5HdRbcSLyE1Y_znPWpjwsqMrq3W-XxrkpXhKnO9DbMHOWpeuB2AAAbrqJ_BgM"
-$script:qwenApiKey = "sk-5786fd93bef34d75b214d50159550325"
+# ---- API Key input ----
+$apiKeyLabel = New-Object System.Windows.Forms.Label
+$apiKeyLabel.Text = "MiniMax API Key:"
+$apiKeyLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
+$apiKeyLabel.ForeColor = $clrText
+$apiKeyLabel.Location = New-Object System.Drawing.Point(32, 226)
+$apiKeyLabel.AutoSize = $true
+$form.Controls.Add($apiKeyLabel)
+
+$apiKeyBox = New-Object System.Windows.Forms.TextBox
+$apiKeyBox.Location = New-Object System.Drawing.Point(160, 223)
+$apiKeyBox.Size = New-Object System.Drawing.Size(375, 26)
+$apiKeyBox.Font = New-Object System.Drawing.Font("Consolas", 9)
+$apiKeyBox.ForeColor = $clrText
+$apiKeyBox.UseSystemPasswordChar = $true
+$form.Controls.Add($apiKeyBox)
+
+$showKeyCheck = New-Object System.Windows.Forms.CheckBox
+$showKeyCheck.Text = "Show"
+$showKeyCheck.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 8)
+$showKeyCheck.ForeColor = $clrMuted
+$showKeyCheck.Location = New-Object System.Drawing.Point(160, 250)
+$showKeyCheck.AutoSize = $true
+$form.Controls.Add($showKeyCheck)
+$showKeyCheck.Add_CheckedChanged({
+  $apiKeyBox.UseSystemPasswordChar = -not $showKeyCheck.Checked
+})
+
+# ---- API region selection ----
+$regionLabel = New-Object System.Windows.Forms.Label
+$regionLabel.Text = "API Region:"
+$regionLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
+$regionLabel.ForeColor = $clrText
+$regionLabel.Location = New-Object System.Drawing.Point(32, 275)
+$regionLabel.AutoSize = $true
+$form.Controls.Add($regionLabel)
+
+$radioDomestic = New-Object System.Windows.Forms.RadioButton
+$radioDomestic.Text = "国内版 (api.minimax.chat)"
+$radioDomestic.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9)
+$radioDomestic.ForeColor = $clrText
+$radioDomestic.Location = New-Object System.Drawing.Point(160, 273)
+$radioDomestic.AutoSize = $true
+$radioDomestic.Checked = $true
+$form.Controls.Add($radioDomestic)
+
+$radioGlobal = New-Object System.Windows.Forms.RadioButton
+$radioGlobal.Text = "海外版 (api.minimax.io)"
+$radioGlobal.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9)
+$radioGlobal.ForeColor = $clrText
+$radioGlobal.Location = New-Object System.Drawing.Point(380, 273)
+$radioGlobal.AutoSize = $true
+$form.Controls.Add($radioGlobal)
 
 # ---- Log area ----
 $logBox = New-Object System.Windows.Forms.TextBox
 $logBox.Multiline = $true
 $logBox.ReadOnly = $true
 $logBox.ScrollBars = "Vertical"
-$logBox.Location = New-Object System.Drawing.Point(30, 228)
+$logBox.Location = New-Object System.Drawing.Point(30, 305)
 $logBox.Size = New-Object System.Drawing.Size(505, 158)
 $logBox.Font = New-Object System.Drawing.Font("Consolas", 8.5)
 $logBox.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 252)
@@ -106,7 +156,7 @@ $form.Controls.Add($logBox)
 
 # ---- Progress bar ----
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(30, 396)
+$progressBar.Location = New-Object System.Drawing.Point(30, 473)
 $progressBar.Size = New-Object System.Drawing.Size(505, 20)
 $progressBar.Style = "Continuous"
 $progressBar.Value = 0
@@ -117,7 +167,7 @@ $actionBtn = New-Object System.Windows.Forms.Button
 $actionBtn.Text = "Start Install"
 $actionBtn.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 11, [System.Drawing.FontStyle]::Bold)
 $actionBtn.Size = New-Object System.Drawing.Size(200, 40)
-$actionBtn.Location = New-Object System.Drawing.Point(190, 426)
+$actionBtn.Location = New-Object System.Drawing.Point(190, 503)
 $actionBtn.BackColor = $clrPrimary
 $actionBtn.ForeColor = [System.Drawing.Color]::White
 $actionBtn.FlatStyle = "Flat"
@@ -130,7 +180,7 @@ $footerLabel = New-Object System.Windows.Forms.Label
 $footerLabel.Text = "Install path: $script:repoRoot"
 $footerLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 8)
 $footerLabel.ForeColor = $clrMuted
-$footerLabel.Location = New-Object System.Drawing.Point(30, 475)
+$footerLabel.Location = New-Object System.Drawing.Point(30, 553)
 $footerLabel.Size = New-Object System.Drawing.Size(510, 18)
 $form.Controls.Add($footerLabel)
 
@@ -197,8 +247,17 @@ function Run-Process($exe, $arguments, $workDir) {
 
 # ============ Installation logic ============
 function Do-Install {
+  # Validate API key
+  if (-not $apiKeyBox.Text.Trim()) {
+    [System.Windows.Forms.MessageBox]::Show("Please enter your MiniMax API Key.", "Missing API Key", "OK", "Warning")
+    return
+  }
+
   $script:installState = "running"
   $actionBtn.Enabled = $false
+  $apiKeyBox.Enabled = $false
+  $radioDomestic.Enabled = $false
+  $radioGlobal.Enabled = $false
   $actionBtn.Text = "Installing..."
   $actionBtn.BackColor = $clrMuted
   [System.Windows.Forms.Application]::DoEvents()
@@ -350,8 +409,8 @@ function Do-Install {
     }
 
     $configFile = Join-Path $openclawDir 'openclaw.json'
-    $mmKey = $script:minimaxApiKey
-    $qwKey = $script:qwenApiKey
+    $mmKey = $apiKeyBox.Text.Trim()
+    $mmBaseUrl = if ($radioDomestic.Checked) { "https://api.minimax.chat/v1" } else { "https://api.minimax.io/v1" }
 
     $tokenBytes = New-Object byte[] 24
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($tokenBytes)
@@ -377,9 +436,6 @@ function Do-Install {
       "model": {
         "primary": "minimax/MiniMax-M2.5"
       },
-      "imageModel": {
-        "primary": "dashscope/qwen-vl-max"
-      },
       "compaction": {
         "mode": "safeguard",
         "reserveTokensFloor": 4000
@@ -392,7 +448,7 @@ function Do-Install {
     "mode": "merge",
     "providers": {
       "minimax": {
-        "baseUrl": "https://api.minimax.io/v1",
+        "baseUrl": "$mmBaseUrl",
         "apiKey": "$mmKey",
         "api": "openai-completions",
         "models": [
@@ -403,22 +459,6 @@ function Do-Install {
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 204800,
-            "maxTokens": 8192
-          }
-        ]
-      },
-      "dashscope": {
-        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "apiKey": "$qwKey",
-        "api": "openai-completions",
-        "models": [
-          {
-            "id": "qwen-vl-max",
-            "name": "Qwen VL Max (Vision)",
-            "reasoning": false,
-            "input": ["image"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 32000,
             "maxTokens": 8192
           }
         ]
@@ -530,6 +570,9 @@ Read-Host "Press Enter to close"
     Write-Log "ERROR: $_"
     Write-Log "$($_.ScriptStackTrace)"
     $actionBtn.Enabled = $true
+    $apiKeyBox.Enabled = $true
+    $radioDomestic.Enabled = $true
+    $radioGlobal.Enabled = $true
     $actionBtn.Text = "Retry"
     $actionBtn.BackColor = $clrRed
     [System.Windows.Forms.Application]::DoEvents()

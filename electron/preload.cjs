@@ -22,6 +22,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.send('restart-gateway');
   },
 
+  // 关闭 Gateway
+  stopGateway: () => {
+    ipcRenderer.send('stop-gateway');
+  },
+
+  // 启动 Gateway
+  startGateway: () => {
+    ipcRenderer.send('start-gateway');
+  },
+
   // 监听 Gateway 错误
   onGatewayError: (callback) => {
     ipcRenderer.on('gateway-error', (event, message) => {

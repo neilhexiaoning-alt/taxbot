@@ -539,6 +539,8 @@ ipcMain.on('get-gateway-status', (event) => {
 });
 
 ipcMain.on('restart-gateway', () => { restartGateway(); });
+ipcMain.on('stop-gateway', () => { stopGateway(); });
+ipcMain.on('start-gateway', () => { startGateway(); });
 
 ipcMain.handle('get-gateway-token', () => {
   return getGatewayToken();

@@ -147,7 +147,43 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.3);
         position: relative;
-        z-index: 1;
+        z-index: 10;
+        cursor: pointer;
+        user-select: none;
+      }
+      .taxchat-header__status:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+      .status-arrow {
+        font-size: 10px;
+        opacity: 0.7;
+        margin-left: 2px;
+      }
+      .status-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 6px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        min-width: 160px;
+        z-index: 100;
+        overflow: hidden;
+      }
+      .status-menu__item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #374151;
+        transition: background 0.15s;
+        white-space: nowrap;
+      }
+      .status-menu__item:hover {
+        background: #f3f4f6;
+      }
+      .status-menu__item:active {
+        background: #e5e7eb;
       }
 
       .status-dot {
@@ -1104,6 +1140,41 @@
         overflow-y: auto;
         position: relative;
       }
+      .panel-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        padding: 10px 12px;
+      }
+
+      /* ========== Skills Panel (standalone) ========== */
+      .skills-panel {
+        width: 0;
+        overflow: hidden;
+        transition: width 0.3s ease;
+        border-left: 0px solid rgba(0, 168, 255, 0.15);
+        background: #fafbfc;
+        display: flex;
+        flex-direction: column;
+      }
+      .skills-panel.open {
+        width: 420px;
+        border-left-width: 1px;
+      }
+      .skills-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient(135deg, rgba(0,168,255,0.06), rgba(0,168,255,0.02));
+      }
+      .skills-panel__body {
+        flex: 1;
+        overflow-y: auto;
+        position: relative;
+      }
+
       .knowledge-empty {
         display: flex;
         flex-direction: column;

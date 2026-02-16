@@ -4154,6 +4154,7 @@ function handleCustomSkillClick(skill) {
     state.draft = tag + (state.draft ? " " + state.draft : "");
   }
   state.showFavorites = false;
+  state.showSkills = false;
   renderApp();
   setTimeout(() => {
     state.inputRef?.focus();
@@ -4262,11 +4263,12 @@ var state = {
   toastTimer: null,
   notifications: loadNotifications(),
   panelTab: "favorites",
-  knowledgeTab: "files",
   customSkills: loadCustomSkills(),
   editingSkill: null,
   activeCustomSkill: null,
   showKnowledge: false,
+  showSkills: false,
+  showStatusMenu: false,
   knowledgeFiles: [],
   knowledgeRefs: [],
   knowledgeDragOver: false,
@@ -5202,8 +5204,18 @@ function renderApp() {
               <img src="./assets/taxchat-logo.png" alt="智税宝" />
             </div>
             <h1>智税宝</h1>
-            <div class="taxchat-header__status">
-              <span class="status-dot ${statusClass}"></span> ${statusText}
+            <div class="taxchat-header__status" @click=${(e) => { e.stopPropagation(); state.showStatusMenu = !state.showStatusMenu; renderApp(); }}>
+              <span class="status-dot ${statusClass}"></span> ${statusText} <span class="status-arrow">▾</span>
+              ${state.showStatusMenu ? b2`
+                <div class="status-menu" @click=${(e) => e.stopPropagation()}>
+                  ${state.connected ? b2`
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = window.electronAPI; if (api?.restartGateway) api.restartGateway(); setTimeout(() => connectGateway(), 2000); renderApp(); }}>重连 Gateway</div>
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = window.electronAPI; if (api?.stopGateway) api.stopGateway(); state.connected = false; cancelReconnect(); renderApp(); }}>关闭 Gateway</div>
+                  ` : b2`
+                    <div class="status-menu__item" @click=${() => { state.showStatusMenu = false; const api = window.electronAPI; if (api?.startGateway) api.startGateway(); setTimeout(() => connectGateway(), 2000); renderApp(); }}>连接 Gateway</div>
+                  `}
+                </div>
+              ` : ""}
             </div>
           </div>
         </div>
@@ -5211,6 +5223,7 @@ function renderApp() {
           <button class="favorites-toggle-btn ${state.showFavorites ? "active" : ""}" @click=${() => {
     state.showFavorites = !state.showFavorites;
     state.showKnowledge = false;
+    state.showSkills = false;
     renderApp();
   }} title="收藏夹">
             <span>⭐</span>
@@ -5219,10 +5232,19 @@ function renderApp() {
           <button class="knowledge-toggle-btn ${state.showKnowledge ? "active" : ""}" @click=${() => {
     state.showKnowledge = !state.showKnowledge;
     state.showFavorites = false;
+    state.showSkills = false;
     if (state.showKnowledge) loadKnowledgeFiles();
     renderApp();
   }} title="知识库">
             知识库
+          </button>
+          <button class="knowledge-toggle-btn ${state.showSkills ? "active" : ""}" @click=${() => {
+    state.showSkills = !state.showSkills;
+    state.showFavorites = false;
+    state.showKnowledge = false;
+    renderApp();
+  }} title="技能管理">
+            技能
           </button>
         </div>
       </header>
@@ -5287,7 +5309,7 @@ function renderApp() {
     if (!state.authorizedFolder) {
       showToast("\u8BF7\u5148\u5728\u77E5\u8BC6\u5E93\u9762\u677F\u4E2D\u9009\u62E9\u6587\u4EF6\u5939");
       state.showKnowledge = true;
-      state.knowledgeTab = "files";
+      state.showSkills = false;
       renderApp();
       return;
     }
@@ -5528,23 +5550,9 @@ function renderApp() {
 
         <div class="knowledge-panel ${state.showKnowledge ? "open" : ""}">
           <div class="knowledge-panel__header">
-            <div class="panel-tabs">
-              <button class="panel-tab ${state.knowledgeTab === "files" ? "active" : ""}" @click=${() => {
-    state.knowledgeTab = "files";
-    renderApp();
-  }}>
-                <span>📂</span> 知识库
-              </button>
-              <button class="panel-tab ${state.knowledgeTab === "skills" ? "active" : ""}" @click=${() => {
-    state.knowledgeTab = "skills";
-    renderApp();
-  }}>
-                <span>🛠</span> 自定义技能
-              </button>
-            </div>
+            <span class="panel-title">📂 知识库</span>
             <button class="favorites-panel__close" @click=${() => { state.showKnowledge = false; renderApp(); }}>✕</button>
           </div>
-          ${state.knowledgeTab === "files" ? b2`
           <div class="knowledge-panel__body"
             @dragover=${(e6) => { e6.preventDefault(); e6.stopPropagation(); }}
             @dragenter=${(e6) => { e6.preventDefault(); e6.stopPropagation(); knowledgeDragCounter++; if (!state.knowledgeDragOver) { state.knowledgeDragOver = true; renderApp(); } }}
@@ -5590,8 +5598,14 @@ function renderApp() {
               `)}
             `}
           </div>
-          ` : b2`
-          <div class="knowledge-panel__body">
+        </div>
+
+        <div class="skills-panel ${state.showSkills ? "open" : ""}">
+          <div class="skills-panel__header">
+            <span class="panel-title">🛠 技能管理</span>
+            <button class="favorites-panel__close" @click=${() => { state.showSkills = false; renderApp(); }}>✕</button>
+          </div>
+          <div class="skills-panel__body">
             <div class="skill-section-header" @click=${() => { state.builtinSkillsCollapsed = !state.builtinSkillsCollapsed; renderApp(); }}>
               <span class="skill-section-arrow ${state.builtinSkillsCollapsed ? "collapsed" : ""}">\u25BE</span>
               <span class="skill-section-label">\u9884\u5236\u6280\u80FD</span>
@@ -5634,7 +5648,6 @@ function renderApp() {
                 </div>
               `)}
           </div>
-          `}
         </div>
       </div><!-- /taxchat-body -->
 
@@ -6203,6 +6216,12 @@ function registerManagedSkillsListener() {
     syncManagedSkills();
   });
 }
+document.addEventListener("click", () => {
+  if (state.showStatusMenu) {
+    state.showStatusMenu = false;
+    renderApp();
+  }
+});
 document.addEventListener("click", (e6) => {
   const target = e6.target;
   const anchor = target.closest("a");
