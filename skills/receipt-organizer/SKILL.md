@@ -7,21 +7,6 @@ metadata:
       {
         "emoji": "🧾",
         "os": ["win32"],
-        "install":
-          [
-            {
-              "id": "openpyxl",
-              "kind": "uv",
-              "label": "Install openpyxl",
-              "package": "openpyxl",
-            },
-            {
-              "id": "pdfplumber",
-              "kind": "uv",
-              "label": "Install pdfplumber",
-              "package": "pdfplumber",
-            },
-          ],
       },
   }
 ---

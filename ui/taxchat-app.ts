@@ -230,17 +230,13 @@ const BUILTIN_SKILLS: (CustomSkill & { builtin: true })[] = [
 | 航空运输电子客票 | 061 | 全电 |
 | 铁路电子客票 | 083 | 全电 |
 
-## 第三步：调用查验接口
+## 第三步：查验接口（系统自动调用）
 
-立即用 exec 工具执行：
-
-node "$env:TAXBOT_ROOT/skills/invoice-check/scripts/check-invoice.mjs" --invoiceCode=发票代码 --invoiceNo=发票号码 --invoiceDate=开票日期 --invoiceAmount=不含税金额 --checkCode=校验码后六位 --invoiceType=种类代码
-
-参数值不加引号，日期YYYYMMDD，金额为数字。全电发票的invoiceCode和checkCode传空值(--invoiceCode= --checkCode= )。
+系统已自动调用查验接口，查验结果会附在消息末尾的【查验结果】中。如果没有查验结果，说明字段提取失败或接口调用失败，请根据已有信息进行分析。
 
 ## 第四步：展示查验结果
 
-将JSON结果以表格展示：查验状态、发票代码、发票号码、开票日期、发票状态(正常/作废/红冲)、销方名称、购方名称、金额、税额、价税合计。如有货物明细也列出。
+将【查验结果】中的JSON以表格展示：查验状态、发票代码、发票号码、开票日期、发票状态(正常/作废/红冲)、销方名称、购方名称、金额、税额、价税合计。如有货物明细也列出。如果没有查验结果，跳过此步直接进入风险分析。
 
 ## 第五步：风险分析
 
@@ -806,8 +802,8 @@ async function connectGateway() {
       // Handle agent events (tool execution progress)
       if (evt.event === "agent") {
         const agentPayload = evt.payload as any;
-        // Only process events for our session
-        if (agentPayload?.sessionKey !== state.sessionKey) return;
+        // Only process events for our session (gateway prefixes with "agent:main:")
+        if (agentPayload?.sessionKey && !String(agentPayload.sessionKey).endsWith(state.sessionKey)) return;
 
         if (agentPayload?.stream === "tool" && agentPayload?.data) {
           const phase = agentPayload.data.phase;
@@ -852,8 +848,8 @@ async function connectGateway() {
       if (evt.event === "chat") {
         const payload = evt.payload as any;
 
-        // Only process events for our session
-        if (payload?.sessionKey !== state.sessionKey) {
+        // Only process events for our session (gateway prefixes with "agent:main:")
+        if (payload?.sessionKey && !String(payload.sessionKey).endsWith(state.sessionKey)) {
           return;
         }
 
@@ -2632,14 +2628,24 @@ async function handleSend() {
   // (the gateway skill system relies on tool calls to read SKILL.md, but qwen-vl-max
   //  doesn't support function calling, so we must include instructions inline)
 
-  // Auto-detect: if no skill was explicitly activated, check if user's text mentions a custom skill name
+  // Auto-detect: if no skill was explicitly activated, check if user's text mentions a skill name
   let detectedSkill = activeSkill;
-  if (!detectedSkill && userText && state.customSkills.length > 0) {
+  if (!detectedSkill && userText) {
     const textLower = userText.toLowerCase();
+    // Check custom skills first
     for (const sk of state.customSkills) {
       if (sk.prompt && sk.name && textLower.includes(sk.name.toLowerCase())) {
         detectedSkill = sk;
         break;
+      }
+    }
+    // Then check builtin skills
+    if (!detectedSkill) {
+      for (const sk of BUILTIN_SKILLS) {
+        if (sk.prompt && sk.name && textLower.includes(sk.name.toLowerCase())) {
+          detectedSkill = sk;
+          break;
+        }
       }
     }
   }
@@ -2713,7 +2719,7 @@ async function handleSend() {
 
   // Build attachments in API format
   // Support all file types (images, PDFs, documents, etc.)
-  const apiAttachments = state.attachments
+  let apiAttachments = state.attachments
     .map(att => {
       // Extract base64 content from data URL using proper parsing
       const match = /^data:([^;]+);base64,(.+)$/.exec(att.dataUrl);
@@ -2745,6 +2751,19 @@ async function handleSend() {
     .filter((a): a is NonNullable<typeof a> => a !== null);
 
   console.log(`Total attachments prepared: ${apiAttachments.length}`);
+
+  // Extract text from document attachments (PDF, Word etc.) client-side
+  // since the gateway only accepts image attachments and drops everything else
+  let documentText = "";
+  if (hasDocuments) {
+    documentText = await extractAttachmentTexts(state.attachments);
+    if (documentText) {
+      messageToSend += `\n\n【文件内容】\n${documentText}`;
+    }
+  }
+
+  // Remove non-image attachments (gateway drops them anyway)
+  apiAttachments = apiAttachments.filter(a => a.type === "image");
 
   state.attachments = [];
 
