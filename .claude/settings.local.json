@@ -19,7 +19,22 @@
       "Bash(tasklist:*)",
       "Bash(ls:*)",
       "Bash(powershell.exe:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm view:*)",
+      "Bash(npm pack:*)",
+      "Bash(tar xzf:*)",
+      "Bash(cygpath:*)",
+      "Bash(grep:*)",
+      "Bash(./electron-dist/electron.exe:*)",
+      "Bash(python:*)",
+      "Bash(SESSIONS_FILE=\"$USERPROFILE/.openclaw/agents/main/sessions/sessions.json\")",
+      "Bash(if [ -f \"$SESSIONS_FILE\" ])",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(# Check auth profile store find \"\"$USERPROFILE/.openclaw/agents\"\" -name \"\"auth*\"\" -o -name \"\"profile*\"\" -o -name \"\"*.store*\"\")",
+      "Bash(git status:*)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

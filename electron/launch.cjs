@@ -7,7 +7,16 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 // 获取 Electron 二进制路径
-const electronPath = require('electron');
+// Try bundled electron-dist first, then npm package, then PATH
+const fs = require('fs');
+const projectRoot = path.resolve(__dirname, '..');
+const bundledElectron = path.join(projectRoot, 'electron-dist', 'electron.exe');
+let electronPath;
+if (fs.existsSync(bundledElectron)) {
+  electronPath = bundledElectron;
+} else {
+  try { electronPath = require('electron'); } catch (_) { electronPath = 'electron'; }
+}
 const appPath = path.join(__dirname);
 
 console.log('[Launcher] Electron binary:', electronPath);

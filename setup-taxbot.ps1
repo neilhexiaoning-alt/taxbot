@@ -383,6 +383,14 @@ function Do-Install {
       }
     }
 
+    # Remove npm electron package to prevent require('electron') conflict
+    # In Electron 40+, the npm package shadows the built-in API module
+    $npmElectron = Join-Path $script:repoRoot 'node_modules\electron'
+    if (Test-Path $npmElectron) {
+      Remove-Item $npmElectron -Recurse -Force -ErrorAction SilentlyContinue
+      Write-Log "Removed npm electron package (using bundled electron-dist instead)."
+    }
+
     # Build check
     $distIndex = Join-Path $script:repoRoot 'dist\index.js'
     $distTaxchat = Join-Path $script:repoRoot 'dist\control-ui\taxchat.html'

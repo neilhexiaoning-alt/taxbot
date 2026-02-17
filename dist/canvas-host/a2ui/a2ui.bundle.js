@@ -8543,7 +8543,6 @@ function decode$2(string, exclude) {
 }
 decode$2.defaultChars = ";/?:@&=+$,#";
 decode$2.componentChars = "";
-var decode_default = decode$2;
 
 const encodeCache = {};
 function getEncodeCache(exclude) {
@@ -8606,7 +8605,6 @@ function encode$2(string, exclude, keepEscaped) {
 }
 encode$2.defaultChars = ";/?:@&=+$,-_.!~*'()#";
 encode$2.componentChars = "-_.!~*'()";
-var encode_default = encode$2;
 
 function format(url) {
 	let result = "";
@@ -8831,13 +8829,12 @@ Url.prototype.parseHost = function(host) {
 		this.hostname = host;
 	}
 };
-var parse_default = urlParse;
 
 var mdurl_exports = /* @__PURE__ */ __exportAll({
-	decode: () => decode_default,
-	encode: () => encode_default,
+	decode: () => decode$2,
+	encode: () => encode$2,
 	format: () => format,
-	parse: () => parse_default
+	parse: () => urlParse
 });
 
 var regex_default$5 = /[\0-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
@@ -11931,7 +11928,6 @@ Renderer.prototype.render = function(tokens, options, env) {
 	}
 	return result;
 };
-var renderer_default = Renderer;
 
 /**
 * class Ruler
@@ -12232,7 +12228,6 @@ Ruler.prototype.getRules = function(chainName) {
 	}
 	return this.__cache__[chainName] || [];
 };
-var ruler_default = Ruler;
 
 /**
 * class Token
@@ -12403,7 +12398,6 @@ Token.prototype.attrJoin = function attrJoin(name, value) {
 		this.attrs[idx][1] = this.attrs[idx][1] + " " + value;
 	}
 };
-var token_default = Token;
 
 function StateCore(src, md, env) {
 	this.src = src;
@@ -12412,8 +12406,7 @@ function StateCore(src, md, env) {
 	this.inlineMode = false;
 	this.md = md;
 }
-StateCore.prototype.Token = token_default;
-var state_core_default = StateCore;
+StateCore.prototype.Token = Token;
 
 const NEWLINES_RE = /\r\n?|\n/g;
 const NULL_RE = /\0/g;
@@ -12801,7 +12794,7 @@ function Core() {
 	*
 	* [[Ruler]] instance. Keep configuration of core rules.
 	**/
-	this.ruler = new ruler_default();
+	this.ruler = new Ruler();
 	for (let i = 0; i < _rules$2.length; i++) {
 		this.ruler.push(_rules$2[i][0], _rules$2[i][1]);
 	}
@@ -12817,8 +12810,7 @@ Core.prototype.process = function(state) {
 		rules[i](state);
 	}
 };
-Core.prototype.State = state_core_default;
-var parser_core_default = Core;
+Core.prototype.State = StateCore;
 
 function StateBlock(src, md, env, tokens) {
 	this.src = src;
@@ -12877,7 +12869,7 @@ function StateBlock(src, md, env, tokens) {
 	this.lineMax = this.bMarks.length - 1;
 }
 StateBlock.prototype.push = function(type, tag, nesting) {
-	const token = new token_default(type, tag, nesting);
+	const token = new Token(type, tag, nesting);
 	token.block = true;
 	if (nesting < 0) this.level--;
 	token.level = this.level;
@@ -12973,8 +12965,7 @@ StateBlock.prototype.getLines = function getLines(begin, end, indent, keepLastLF
 	}
 	return queue.join("");
 };
-StateBlock.prototype.Token = token_default;
-var state_block_default = StateBlock;
+StateBlock.prototype.Token = Token;
 
 const MAX_AUTOCOMPLETED_CELLS = 65536;
 function getLine(state, line) {
@@ -14199,7 +14190,7 @@ function ParserBlock() {
 	*
 	* [[Ruler]] instance. Keep configuration of block rules.
 	**/
-	this.ruler = new ruler_default();
+	this.ruler = new Ruler();
 	for (let i = 0; i < _rules$1.length; i++) {
 		this.ruler.push(_rules$1[i][0], _rules$1[i][1], { alt: (_rules$1[i][2] || []).slice() });
 	}
@@ -14258,8 +14249,7 @@ ParserBlock.prototype.parse = function(src, md, env, outTokens) {
 	const state = new this.State(src, md, env, outTokens);
 	this.tokenize(state, state.line, state.lineMax);
 };
-ParserBlock.prototype.State = state_block_default;
-var parser_block_default = ParserBlock;
+ParserBlock.prototype.State = StateBlock;
 
 function StateInline(src, md, env, outTokens) {
 	this.src = src;
@@ -14280,7 +14270,7 @@ function StateInline(src, md, env, outTokens) {
 	this.linkLevel = 0;
 }
 StateInline.prototype.pushPending = function() {
-	const token = new token_default("text", "", 0);
+	const token = new Token("text", "", 0);
 	token.content = this.pending;
 	token.level = this.pendingLevel;
 	this.tokens.push(token);
@@ -14291,7 +14281,7 @@ StateInline.prototype.push = function(type, tag, nesting) {
 	if (this.pending) {
 		this.pushPending();
 	}
-	const token = new token_default(type, tag, nesting);
+	const token = new Token(type, tag, nesting);
 	let token_meta = null;
 	if (nesting < 0) {
 		this.level--;
@@ -14333,8 +14323,7 @@ StateInline.prototype.scanDelims = function(start, canSplitWord) {
 		length: count
 	};
 };
-StateInline.prototype.Token = token_default;
-var state_inline_default = StateInline;
+StateInline.prototype.Token = Token;
 
 function isTerminatorChar(ch) {
 	switch (ch) {
@@ -14396,7 +14385,13 @@ function linkify(state, silent) {
 	if (!link) return false;
 	let url = link.url;
 	if (url.length <= proto.length) return false;
-	url = url.replace(/\*+$/, "");
+	let urlEnd = url.length;
+	while (urlEnd > 0 && url.charCodeAt(urlEnd - 1) === 42) {
+		urlEnd--;
+	}
+	if (urlEnd !== url.length) {
+		url = url.slice(0, urlEnd);
+	}
 	const fullUrl = state.md.normalizeLink(url);
 	if (!state.md.validateLink(fullUrl)) return false;
 	if (!silent) {
@@ -15180,7 +15175,7 @@ function ParserInline() {
 	*
 	* [[Ruler]] instance. Keep configuration of inline rules.
 	**/
-	this.ruler = new ruler_default();
+	this.ruler = new Ruler();
 	for (let i = 0; i < _rules.length; i++) {
 		this.ruler.push(_rules[i][0], _rules[i][1]);
 	}
@@ -15190,7 +15185,7 @@ function ParserInline() {
 	* [[Ruler]] instance. Second ruler used for post-processing
 	* (e.g. in emphasis-like rules).
 	**/
-	this.ruler2 = new ruler_default();
+	this.ruler2 = new Ruler();
 	for (let i = 0; i < _rules2.length; i++) {
 		this.ruler2.push(_rules2[i][0], _rules2[i][1]);
 	}
@@ -15271,8 +15266,7 @@ ParserInline.prototype.parse = function(str, md, env, outTokens) {
 		rules[i](state);
 	}
 };
-ParserInline.prototype.State = state_inline_default;
-var parser_inline_default = ParserInline;
+ParserInline.prototype.State = StateInline;
 
 function re_default(opts) {
 	const re = {};
@@ -15801,7 +15795,6 @@ LinkifyIt.prototype.normalize = function normalize(match) {
 * Override to modify basic RegExp-s.
 **/
 LinkifyIt.prototype.onCompile = function onCompile() {};
-var linkify_it_default = LinkifyIt;
 
 /** Highest positive signed 32-bit float value */
 const maxInt = 2147483647;
@@ -16132,7 +16125,6 @@ const punycode = {
 	"toASCII": toASCII,
 	"toUnicode": toUnicode
 };
-var punycode_es6_default = punycode;
 
 var default_default = {
 	options: {
@@ -16250,26 +16242,26 @@ const RECODE_HOSTNAME_FOR = [
 	"mailto:"
 ];
 function normalizeLink(url) {
-	const parsed = parse_default(url, true);
+	const parsed = urlParse(url, true);
 	if (parsed.hostname) {
 		if (!parsed.protocol || RECODE_HOSTNAME_FOR.indexOf(parsed.protocol) >= 0) {
 			try {
-				parsed.hostname = punycode_es6_default.toASCII(parsed.hostname);
+				parsed.hostname = punycode.toASCII(parsed.hostname);
 			} catch (er) {}
 		}
 	}
-	return encode_default(format(parsed));
+	return encode$2(format(parsed));
 }
 function normalizeLinkText(url) {
-	const parsed = parse_default(url, true);
+	const parsed = urlParse(url, true);
 	if (parsed.hostname) {
 		if (!parsed.protocol || RECODE_HOSTNAME_FOR.indexOf(parsed.protocol) >= 0) {
 			try {
-				parsed.hostname = punycode_es6_default.toUnicode(parsed.hostname);
+				parsed.hostname = punycode.toUnicode(parsed.hostname);
 			} catch (er) {}
 		}
 	}
-	return decode_default(format(parsed), decode_default.defaultChars + "%");
+	return decode$2(format(parsed), decode$2.defaultChars + "%");
 }
 /**
 * class MarkdownIt
@@ -16420,7 +16412,7 @@ function MarkdownIt(presetName, options) {
 	* writing plugins. For simple rules control use [[MarkdownIt.disable]] and
 	* [[MarkdownIt.enable]].
 	**/
-	this.inline = new parser_inline_default();
+	this.inline = new ParserInline();
 	/**
 	* MarkdownIt#block -> ParserBlock
 	*
@@ -16428,7 +16420,7 @@ function MarkdownIt(presetName, options) {
 	* writing plugins. For simple rules control use [[MarkdownIt.disable]] and
 	* [[MarkdownIt.enable]].
 	**/
-	this.block = new parser_block_default();
+	this.block = new ParserBlock();
 	/**
 	* MarkdownIt#core -> Core
 	*
@@ -16436,7 +16428,7 @@ function MarkdownIt(presetName, options) {
 	* writing plugins. For simple rules control use [[MarkdownIt.disable]] and
 	* [[MarkdownIt.enable]].
 	**/
-	this.core = new parser_core_default();
+	this.core = new Core();
 	/**
 	* MarkdownIt#renderer -> Renderer
 	*
@@ -16458,7 +16450,7 @@ function MarkdownIt(presetName, options) {
 	*
 	* See [[Renderer]] docs and [source code](https://github.com/markdown-it/markdown-it/blob/master/lib/renderer.mjs).
 	**/
-	this.renderer = new renderer_default();
+	this.renderer = new Renderer();
 	/**
 	* MarkdownIt#linkify -> LinkifyIt
 	*
@@ -16466,7 +16458,7 @@ function MarkdownIt(presetName, options) {
 	* Used by [linkify](https://github.com/markdown-it/markdown-it/blob/master/lib/rules_core/linkify.mjs)
 	* rule.
 	**/
-	this.linkify = new linkify_it_default();
+	this.linkify = new LinkifyIt();
 	/**
 	* MarkdownIt#validateLink(url) -> Boolean
 	*
@@ -16728,7 +16720,6 @@ MarkdownIt.prototype.renderInline = function(src, env) {
 	env = env || {};
 	return this.renderer.render(this.parseInline(src, env), this.options, env);
 };
-var lib_default = MarkdownIt;
 
 /**
 * This is only safe for (and intended to be used for) text node positions. If
@@ -16751,7 +16742,7 @@ function unescapeNodeText(str) {
 }
 
 var MarkdownDirective = class extends i$5 {
-	#markdownIt = lib_default({ highlight: (str, lang) => {
+	#markdownIt = MarkdownIt({ highlight: (str, lang) => {
 		switch (lang) {
 			case "html": {
 				const iframe = document.createElement("iframe");
@@ -16845,7 +16836,7 @@ var MarkdownDirective = class extends i$5 {
 	}
 };
 const markdown = e$10(MarkdownDirective);
-const markdownItStandalone = lib_default();
+const markdownItStandalone = MarkdownIt();
 function renderMarkdownToHtmlString(value) {
 	return markdownItStandalone.render(value);
 }
