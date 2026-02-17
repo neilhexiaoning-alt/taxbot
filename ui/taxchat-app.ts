@@ -230,13 +230,25 @@ const BUILTIN_SKILLS: (CustomSkill & { builtin: true })[] = [
 | 航空运输电子客票 | 061 | 全电 |
 | 铁路电子客票 | 083 | 全电 |
 
-## 第三步：查验接口（系统自动调用）
+## 第三步：调用查验接口
 
-系统已自动调用查验接口，查验结果会附在消息末尾的【查验结果】中。如果没有查验结果，说明字段提取失败或接口调用失败，请根据已有信息进行分析。
+确认提取的字段无误后，立即用 exec 工具执行以下命令（替换实际值）：
+
+node "$env:TAXBOT_ROOT/skills/invoice-check/scripts/check-invoice.mjs" --invoiceCode=发票代码 --invoiceNo=发票号码 --invoiceDate=开票日期 --invoiceAmount=不含税金额 --checkCode=校验码后六位 --invoiceType=种类代码
+
+**参数说明**：
+- 所有参数值不要加引号
+- 日期格式必须为 YYYYMMDD（如 20241215）
+- 金额为数字（如 343.93）
+- 校验码只取后六位
+- 可为空的字段传空值（如 --checkCode= ）
+- $env:TAXBOT_ROOT 是系统环境变量，指向应用根目录，由系统自动设置
+
+如果 exec 工具执行失败或返回错误，根据已有信息进行风险分析。
 
 ## 第四步：展示查验结果
 
-将【查验结果】中的JSON以表格展示：查验状态、发票代码、发票号码、开票日期、发票状态(正常/作废/红冲)、销方名称、购方名称、金额、税额、价税合计。如有货物明细也列出。如果没有查验结果，跳过此步直接进入风险分析。
+解析脚本返回的 JSON 结果，以表格展示：查验状态、发票代码、发票号码、开票日期、发票状态(正常/作废/红冲)、销方名称、购方名称、金额、税额、价税合计。如有货物明细也列出。如果查验失败，跳过此步直接进入风险分析。
 
 ## 第五步：风险分析
 
@@ -405,14 +417,24 @@ async function syncManagedSkills() {
     const result = await api.listManagedSkills();
     if (!result?.ok || !result.skills) return;
     const builtinFolders = new Set(BUILTIN_SKILLS.map(s => s.folderName));
-    const trackedFolders = new Set(state.customSkills.map(s => s.folderName).filter(Boolean));
-    let added = false;
+    let changed = false;
     for (const ms of result.skills) {
-      // Skip built-in skills and already tracked skills
       if (builtinFolders.has(ms.folderName)) continue;
-      if (trackedFolders.has(ms.folderName)) continue;
-      // Also skip if matched by custom-{id} pattern already in list
-      if (state.customSkills.some(s => `custom-${s.id.slice(0, 8)}` === ms.folderName)) continue;
+      // Check if skill already exists in customSkills
+      const existing = state.customSkills.find(s => s.folderName === ms.folderName)
+        || state.customSkills.find(s => `custom-${s.id.slice(0, 8)}` === ms.folderName);
+      if (existing) {
+        // Update prompt/description if SKILL.md changed on disk
+        const newPrompt = ms.prompt || "";
+        const newDesc = ms.description || "";
+        if (existing.prompt !== newPrompt || existing.description !== newDesc) {
+          existing.prompt = newPrompt;
+          existing.description = newDesc;
+          if (ms.emoji) existing.emoji = ms.emoji;
+          changed = true;
+        }
+        continue;
+      }
       state.customSkills.push({
         id: generateUUID(),
         name: ms.name === ms.folderName ? ms.description.slice(0, 20) || ms.folderName : ms.name,
@@ -423,9 +445,9 @@ async function syncManagedSkills() {
         createdAt: Date.now(),
         folderName: ms.folderName,
       });
-      added = true;
+      changed = true;
     }
-    if (added) {
+    if (changed) {
       saveCustomSkills();
       renderApp();
     }
@@ -2490,10 +2512,8 @@ function renderApp() {
             <div class="skill-editor__actions">
               <button class="skill-editor__cancel" @click=${() => { state.editingSkill = null; renderApp(); }}>取消</button>
               <button class="skill-editor__save" @click=${() => {
-                if (!state.editingSkill?.name.trim() || !state.editingSkill?.prompt.trim()) {
-                  alert("请填写名称和操作流程");
-                  return;
-                }
+                if (!state.editingSkill?.name.trim()) { alert("请填写名称"); return; }
+                if (!state.editingSkill?.prompt.trim()) { alert("请填写操作流程"); return; }
                 saveSkillFromEditor();
               }}>保存技能</button>
             </div>

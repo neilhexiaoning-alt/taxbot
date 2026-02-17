@@ -6,7 +6,7 @@ const electron = require('electron');
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, dialog } = electron;
 const path = require('path');
 const fs = require('fs');
-const { spawn, execSync } = require('child_process');
+const { spawn, exec, execSync } = require('child_process');
 const net = require('net');
 
 // Debug log file (appended, for diagnosing IPC calls)
@@ -506,6 +506,7 @@ if (!gotTheLock) {
     startGateway();
     startGatewayProbe();
     startManagedSkillsWatcher();
+    startGuiSignalWatcher();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -1443,6 +1444,57 @@ function stopManagedSkillsWatcher() {
   if (managedSkillsDebounce) {
     clearTimeout(managedSkillsDebounce);
     managedSkillsDebounce = null;
+  }
+}
+
+// ============ GUI Signal Watcher ============
+// The gateway's exec tool runs in a background process that cannot show GUI windows.
+// This watcher picks up signal files written by scripts/open-gui.cjs and opens
+// the requested GUI from the Electron main process (which has desktop access).
+
+let guiSignalWatcher = null;
+
+function startGuiSignalWatcher() {
+  const stateDir = path.join(process.env.USERPROFILE || process.env.HOME || '.', '.openclaw');
+  const signalFile = path.join(stateDir, 'gui-signal.json');
+
+  // Clean up stale signal
+  try { fs.unlinkSync(signalFile); } catch (_) {}
+
+  try {
+    guiSignalWatcher = fs.watch(stateDir, (eventType, filename) => {
+      if (filename !== 'gui-signal.json') return;
+      // Small delay to ensure file write is complete
+      setTimeout(() => {
+        try {
+          if (!fs.existsSync(signalFile)) return;
+          const raw = fs.readFileSync(signalFile, 'utf8');
+          fs.unlinkSync(signalFile); // consume the signal
+
+          const data = JSON.parse(raw);
+          taxLog(`GUI signal received: ${JSON.stringify(data)}`);
+
+          if (data.action === 'folder') {
+            shell.openPath(data.target).then(err => {
+              if (err) taxLog(`shell.openPath error: ${err}`);
+            });
+          } else if (data.action === 'app') {
+            const { exec } = require('child_process');
+            exec(`start "" "${data.target}"`, { shell: true }, (err) => {
+              if (err) taxLog(`GUI app exec error: ${err.message}`);
+            });
+          }
+        } catch (e) {
+          taxLog(`GUI signal processing error: ${e.message}`);
+        }
+      }, 50);
+    });
+    guiSignalWatcher.on('error', (err) => {
+      taxLog(`GUI signal watcher error: ${err.message}`);
+    });
+    taxLog('GUI signal watcher started');
+  } catch (err) {
+    taxLog(`Failed to start GUI signal watcher: ${err.message}`);
   }
 }
 

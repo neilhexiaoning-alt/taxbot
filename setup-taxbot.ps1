@@ -37,7 +37,7 @@ $script:installState = "ready"  # ready | running | done | error
 # ============ Build main form ============
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "TaxBot Setup"
-$form.Size = New-Object System.Drawing.Size(580, 610)
+$form.Size = New-Object System.Drawing.Size(580, 640)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -88,17 +88,37 @@ for ($i = 0; $i -lt $script:stepNames.Count; $i++) {
   $stepY += 26
 }
 
+# ---- Model selection ----
+$modelLabel = New-Object System.Windows.Forms.Label
+$modelLabel.Text = "Model:"
+$modelLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
+$modelLabel.ForeColor = $clrText
+$modelLabel.Location = New-Object System.Drawing.Point(32, 226)
+$modelLabel.AutoSize = $true
+$form.Controls.Add($modelLabel)
+
+$modelCombo = New-Object System.Windows.Forms.ComboBox
+$modelCombo.DropDownStyle = "DropDownList"
+$modelCombo.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
+$modelCombo.ForeColor = $clrText
+$modelCombo.Location = New-Object System.Drawing.Point(160, 223)
+$modelCombo.Size = New-Object System.Drawing.Size(375, 26)
+[void]$modelCombo.Items.Add("MiniMax M2.5")
+[void]$modelCombo.Items.Add("Qwen 3.5 Plus")
+$modelCombo.SelectedIndex = 0
+$form.Controls.Add($modelCombo)
+
 # ---- API Key input ----
 $apiKeyLabel = New-Object System.Windows.Forms.Label
 $apiKeyLabel.Text = "MiniMax API Key:"
 $apiKeyLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
 $apiKeyLabel.ForeColor = $clrText
-$apiKeyLabel.Location = New-Object System.Drawing.Point(32, 226)
+$apiKeyLabel.Location = New-Object System.Drawing.Point(32, 256)
 $apiKeyLabel.AutoSize = $true
 $form.Controls.Add($apiKeyLabel)
 
 $apiKeyBox = New-Object System.Windows.Forms.TextBox
-$apiKeyBox.Location = New-Object System.Drawing.Point(160, 223)
+$apiKeyBox.Location = New-Object System.Drawing.Point(160, 253)
 $apiKeyBox.Size = New-Object System.Drawing.Size(375, 26)
 $apiKeyBox.Font = New-Object System.Drawing.Font("Consolas", 9)
 $apiKeyBox.ForeColor = $clrText
@@ -109,7 +129,7 @@ $showKeyCheck = New-Object System.Windows.Forms.CheckBox
 $showKeyCheck.Text = "Show"
 $showKeyCheck.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 8)
 $showKeyCheck.ForeColor = $clrMuted
-$showKeyCheck.Location = New-Object System.Drawing.Point(160, 250)
+$showKeyCheck.Location = New-Object System.Drawing.Point(160, 280)
 $showKeyCheck.AutoSize = $true
 $form.Controls.Add($showKeyCheck)
 $showKeyCheck.Add_CheckedChanged({
@@ -121,7 +141,7 @@ $regionLabel = New-Object System.Windows.Forms.Label
 $regionLabel.Text = "API Region:"
 $regionLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9.5)
 $regionLabel.ForeColor = $clrText
-$regionLabel.Location = New-Object System.Drawing.Point(32, 275)
+$regionLabel.Location = New-Object System.Drawing.Point(32, 305)
 $regionLabel.AutoSize = $true
 $form.Controls.Add($regionLabel)
 
@@ -129,7 +149,7 @@ $radioDomestic = New-Object System.Windows.Forms.RadioButton
 $radioDomestic.Text = "国内版 (api.minimax.chat)"
 $radioDomestic.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9)
 $radioDomestic.ForeColor = $clrText
-$radioDomestic.Location = New-Object System.Drawing.Point(160, 273)
+$radioDomestic.Location = New-Object System.Drawing.Point(160, 303)
 $radioDomestic.AutoSize = $true
 $radioDomestic.Checked = $true
 $form.Controls.Add($radioDomestic)
@@ -138,16 +158,32 @@ $radioGlobal = New-Object System.Windows.Forms.RadioButton
 $radioGlobal.Text = "海外版 (api.minimax.io)"
 $radioGlobal.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 9)
 $radioGlobal.ForeColor = $clrText
-$radioGlobal.Location = New-Object System.Drawing.Point(380, 273)
+$radioGlobal.Location = New-Object System.Drawing.Point(380, 303)
 $radioGlobal.AutoSize = $true
 $form.Controls.Add($radioGlobal)
+
+# ---- Model selection change handler ----
+$modelCombo.Add_SelectedIndexChanged({
+  if ($modelCombo.SelectedIndex -eq 0) {
+    # MiniMax M2.5
+    $apiKeyLabel.Text = "MiniMax API Key:"
+    $radioDomestic.Text = "国内版 (api.minimax.chat)"
+    $radioGlobal.Text = "海外版 (api.minimax.io)"
+  } else {
+    # Qwen 3.5 Plus
+    $apiKeyLabel.Text = "DashScope API Key:"
+    $radioDomestic.Text = "国内版 (dashscope.aliyuncs.com)"
+    $radioGlobal.Text = "海外版 (dashscope-intl.aliyuncs.com)"
+  }
+  $radioDomestic.Checked = $true
+})
 
 # ---- Log area ----
 $logBox = New-Object System.Windows.Forms.TextBox
 $logBox.Multiline = $true
 $logBox.ReadOnly = $true
 $logBox.ScrollBars = "Vertical"
-$logBox.Location = New-Object System.Drawing.Point(30, 305)
+$logBox.Location = New-Object System.Drawing.Point(30, 335)
 $logBox.Size = New-Object System.Drawing.Size(505, 158)
 $logBox.Font = New-Object System.Drawing.Font("Consolas", 8.5)
 $logBox.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 252)
@@ -156,7 +192,7 @@ $form.Controls.Add($logBox)
 
 # ---- Progress bar ----
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(30, 473)
+$progressBar.Location = New-Object System.Drawing.Point(30, 503)
 $progressBar.Size = New-Object System.Drawing.Size(505, 20)
 $progressBar.Style = "Continuous"
 $progressBar.Value = 0
@@ -167,7 +203,7 @@ $actionBtn = New-Object System.Windows.Forms.Button
 $actionBtn.Text = "Start Install"
 $actionBtn.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 11, [System.Drawing.FontStyle]::Bold)
 $actionBtn.Size = New-Object System.Drawing.Size(200, 40)
-$actionBtn.Location = New-Object System.Drawing.Point(190, 503)
+$actionBtn.Location = New-Object System.Drawing.Point(190, 533)
 $actionBtn.BackColor = $clrPrimary
 $actionBtn.ForeColor = [System.Drawing.Color]::White
 $actionBtn.FlatStyle = "Flat"
@@ -180,7 +216,7 @@ $footerLabel = New-Object System.Windows.Forms.Label
 $footerLabel.Text = "Install path: $script:repoRoot"
 $footerLabel.Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 8)
 $footerLabel.ForeColor = $clrMuted
-$footerLabel.Location = New-Object System.Drawing.Point(30, 553)
+$footerLabel.Location = New-Object System.Drawing.Point(30, 583)
 $footerLabel.Size = New-Object System.Drawing.Size(510, 18)
 $form.Controls.Add($footerLabel)
 
@@ -248,14 +284,17 @@ function Run-Process($exe, $arguments, $workDir) {
 # ============ Installation logic ============
 function Do-Install {
   # Validate API key
+  $selectedModel = $modelCombo.SelectedIndex  # 0=MiniMax, 1=Qwen
+  $keyName = if ($selectedModel -eq 0) { "MiniMax API Key" } else { "DashScope API Key" }
   if (-not $apiKeyBox.Text.Trim()) {
-    [System.Windows.Forms.MessageBox]::Show("Please enter your MiniMax API Key.", "Missing API Key", "OK", "Warning")
+    [System.Windows.Forms.MessageBox]::Show("Please enter your $keyName.", "Missing API Key", "OK", "Warning")
     return
   }
 
   $script:installState = "running"
   $actionBtn.Enabled = $false
   $apiKeyBox.Enabled = $false
+  $modelCombo.Enabled = $false
   $radioDomestic.Enabled = $false
   $radioGlobal.Enabled = $false
   $actionBtn.Text = "Installing..."
@@ -417,12 +456,60 @@ function Do-Install {
     }
 
     $configFile = Join-Path $openclawDir 'openclaw.json'
-    $mmKey = $apiKeyBox.Text.Trim()
-    $mmBaseUrl = if ($radioDomestic.Checked) { "https://api.minimax.chat/v1" } else { "https://api.minimax.io/v1" }
+    $apiKey = $apiKeyBox.Text.Trim()
 
     $tokenBytes = New-Object byte[] 24
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($tokenBytes)
     $gatewayToken = [BitConverter]::ToString($tokenBytes) -replace '-', '' | ForEach-Object { $_.ToLower() }
+
+    # Build model-specific config sections
+    if ($selectedModel -eq 0) {
+      # MiniMax M2.5
+      $baseUrl = if ($radioDomestic.Checked) { "https://api.minimax.chat/v1" } else { "https://api.minimax.io/v1" }
+      $modelPrimary = "minimax/MiniMax-M2.5"
+      $providerBlock = @"
+      "minimax": {
+        "baseUrl": "$baseUrl",
+        "apiKey": "$apiKey",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax M2.5 (Tool-Calling)",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 204800,
+            "maxTokens": 8192
+          }
+        ]
+      }
+"@
+      Write-Log "Model: MiniMax M2.5 ($baseUrl)"
+    } else {
+      # Qwen 3.5 Plus
+      $baseUrl = if ($radioDomestic.Checked) { "https://dashscope.aliyuncs.com/compatible-mode/v1" } else { "https://dashscope-intl.aliyuncs.com/compatible-mode/v1" }
+      $modelPrimary = "dashscope/qwen3.5-plus"
+      $providerBlock = @"
+      "dashscope": {
+        "baseUrl": "$baseUrl",
+        "apiKey": "$apiKey",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "qwen3.5-plus",
+            "name": "Qwen 3.5 Plus",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1048576,
+            "maxTokens": 16384
+          }
+        ]
+      }
+"@
+      Write-Log "Model: Qwen 3.5 Plus ($baseUrl)"
+    }
 
     $configJson = @"
 {
@@ -442,7 +529,7 @@ function Do-Install {
     "defaults": {
       "workspace": "~/.openclaw/workspace",
       "model": {
-        "primary": "minimax/MiniMax-M2.5"
+        "primary": "$modelPrimary"
       },
       "compaction": {
         "mode": "safeguard",
@@ -455,22 +542,7 @@ function Do-Install {
   "models": {
     "mode": "merge",
     "providers": {
-      "minimax": {
-        "baseUrl": "$mmBaseUrl",
-        "apiKey": "$mmKey",
-        "api": "openai-completions",
-        "models": [
-          {
-            "id": "MiniMax-M2.5",
-            "name": "MiniMax M2.5 (Tool-Calling)",
-            "reasoning": false,
-            "input": ["text", "image"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 204800,
-            "maxTokens": 8192
-          }
-        ]
-      }
+$providerBlock
     }
   },
   "hooks": {
@@ -484,7 +556,8 @@ function Do-Install {
     }
   },
   "tools": {
-    "allow": ["read", "write", "edit", "exec", "web_search", "web_fetch", "image", "memory_search", "memory_get", "session_status", "gateway"]
+    "allow": ["read", "write", "edit", "exec", "web_search", "web_fetch", "image", "memory_search", "memory_get", "session_status", "gateway"],
+    "exec": { "host": "gateway", "security": "full", "ask": "off" }
   },
   "skills": {
     "allowBundled": ["contract-tax", "tax-review", "tax-risk"]
@@ -579,6 +652,7 @@ Read-Host "Press Enter to close"
     Write-Log "$($_.ScriptStackTrace)"
     $actionBtn.Enabled = $true
     $apiKeyBox.Enabled = $true
+    $modelCombo.Enabled = $true
     $radioDomestic.Enabled = $true
     $radioGlobal.Enabled = $true
     $actionBtn.Text = "Retry"

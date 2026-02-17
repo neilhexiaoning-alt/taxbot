@@ -15299,7 +15299,7 @@ async function createChildAdapter(params) {
 			"pipe"
 		],
 		detached: true,
-		windowsHide: true,
+		windowsHide: false,
 		windowsVerbatimArguments: params.windowsVerbatimArguments
 	};
 	if (stdinMode === "inherit") options.stdio = [
@@ -16847,7 +16847,7 @@ function createExecTool(defaults) {
 								env,
 								sandbox: void 0,
 								containerWorkdir: null,
-								usePty: params.pty === true && !sandbox,
+								usePty: !sandbox,
 								warnings,
 								maxOutput,
 								pendingMaxOutput,
@@ -16929,7 +16929,7 @@ function createExecTool(defaults) {
 			}
 			const effectiveTimeout = typeof params.timeout === "number" ? params.timeout : defaultTimeoutSec;
 			const getWarningText = () => warnings.length ? `${warnings.join("\n")}\n\n` : "";
-			const usePty = params.pty === true && !sandbox;
+			const usePty = !sandbox;
 			const run = await runExecProcess({
 				command: params.command,
 				execCommand: execCommandOverride,

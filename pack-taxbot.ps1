@@ -134,7 +134,8 @@ Write-Info "[5/9] scripts/ ..."
 $scriptFiles = @(
   'scripts\run-node.mjs',
   'scripts\postinstall.js',
-  'scripts\setup-git-hooks.js'
+  'scripts\setup-git-hooks.js',
+  'scripts\open-gui.cjs'
 )
 foreach ($f in $scriptFiles) {
   Copy-ToOut $f
