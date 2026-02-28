@@ -1,0 +1,221 @@
+/* ========== Header ========== */
+.taxchat-header {
+  background: linear-gradient(135deg, #2E5484 0%, #1B3A5C 100%);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(27, 58, 92, 0.4);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.taxchat-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='white' fill-opacity='0.05'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.taxchat-header__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.taxchat-header__title h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.taxchat-header__logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.taxchat-header__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.taxchat-header__icon {
+  font-size: 24px;
+}
+
+.taxchat-header__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+  user-select: none;
+}
+.taxchat-header__status:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+.status-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+.status-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
+}
+.status-menu__item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.status-menu__item:hover {
+  background: #f3f4f6;
+}
+.status-menu__item:active {
+  background: #e5e7eb;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.ok {
+  background: #34d399;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ========== Header Right Group ========== */
+.taxchat-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 10;
+}
+.header-new-conv-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #fff; transition: background 0.15s;
+}
+.header-new-conv-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
+.header-notif-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+.header-notif-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.header-refresh-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+.header-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.header-refresh-btn.spinning {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.header-refresh-btn.spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+.header-exit-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+.header-exit-btn:hover {
+  background: rgba(239, 68, 68, 0.5);
+}
+.header-notif-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}

@@ -1,0 +1,372 @@
+/* ========== Quick Actions ========== */
+.taxchat-quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding: 2px 0;
+}
+.taxchat-quick-actions::-webkit-scrollbar { height: 3px; }
+.taxchat-quick-actions::-webkit-scrollbar-thumb { background: var(--gray-200, #e5e7eb); border-radius: 3px; }
+
+.quick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(0, 168, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(0, 168, 255, 0.04);
+  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.quick-action-btn:hover:not(:disabled) {
+  background: rgba(0, 168, 255, 0.12);
+  border-color: rgba(0, 168, 255, 0.35);
+  color: #0088CC;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 168, 255, 0.15);
+}
+
+.quick-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.quick-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-action-btn.custom {
+  background: rgba(255, 193, 7, 0.10);
+  border-color: rgba(255, 170, 0, 0.25);
+}
+.quick-action-btn.custom:hover:not(:disabled) {
+  background: rgba(255, 193, 7, 0.20);
+  border-color: rgba(255, 170, 0, 0.45);
+  color: #b37400;
+  box-shadow: 0 2px 8px rgba(255, 170, 0, 0.15);
+}
+
+.quick-action-btn .qa-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ========== Input Area ========== */
+.taxchat-input-area {
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 168, 255, 0.1);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.taxchat-input-container {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  position: relative;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.taxchat-button.send-inline {
+  flex-shrink: 0;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 18px;
+  min-width: unset;
+  align-self: stretch;
+  min-height: 49px;
+  box-sizing: border-box;
+}
+.taxchat-button.send-inline.stop-btn {
+  padding: 12px 20px;
+}
+.stop-btn-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+.stop-btn-ring {
+  position: absolute;
+  inset: 0;
+  animation: stop-spin 1s linear infinite;
+}
+.stop-btn-icon {
+  position: relative;
+  z-index: 1;
+}
+@keyframes stop-spin {
+  to { transform: rotate(360deg); }
+}
+
+.taxchat-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid rgba(0, 168, 255, 0.2);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  min-height: 21px;
+  max-height: 63px;
+  line-height: 1.5;
+  overflow-y: auto;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.taxchat-input:focus {
+  outline: none;
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 4px rgba(0, 168, 255, 0.1);
+}
+
+.taxchat-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.taxchat-input-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ========== Buttons ========== */
+.taxchat-button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 44px;
+}
+
+.taxchat-button.primary {
+  background: linear-gradient(135deg, #2E5484, #1B3A5C);
+  color: white;
+  box-shadow: 0 3px 8px rgba(27, 58, 92, 0.35);
+}
+
+.taxchat-button.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(27, 58, 92, 0.45);
+}
+
+.taxchat-button.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.taxchat-button.secondary {
+  background: rgba(0, 168, 255, 0.08);
+  color: var(--gray-600);
+  border: 1px solid rgba(0, 168, 255, 0.15);
+}
+
+.taxchat-button.secondary:hover:not(:disabled) {
+  background: rgba(0, 168, 255, 0.15);
+  color: var(--primary-color);
+}
+
+.taxchat-button.icon-only {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(0, 168, 255, 0.08);
+  color: var(--gray-500);
+  border: 1px solid rgba(0, 168, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.taxchat-button.icon-only:hover:not(:disabled) {
+  background: rgba(0, 168, 255, 0.15);
+  color: var(--primary-color);
+  border-color: rgba(0, 168, 255, 0.3);
+  transform: rotate(180deg);
+}
+
+.taxchat-button.icon-only:active:not(:disabled) {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.taxchat-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-icon {
+  font-size: 16px;
+}
+
+/* ========== Drag and Drop ========== */
+.taxchat-input-container.drag-over {
+  border: 2px dashed #00A8FF;
+  background: rgba(0, 168, 255, 0.05);
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 168, 255, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.drag-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00A8FF;
+}
+
+/* ========== Attachments ========== */
+.attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--gray-700);
+  max-width: 200px;
+}
+
+.attachment-icon {
+  font-size: 14px;
+}
+
+.attachment-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachment-size {
+  font-size: 12px;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  transition: color 0.2s;
+}
+
+.attachment-remove:hover {
+  color: #ef4444;
+}
+
+/* ========== Knowledge Refs Capsules ========== */
+.knowledge-refs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+}
+.knowledge-ref-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(0, 168, 255, 0.08);
+  border: 1px solid rgba(0, 168, 255, 0.25);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e88e5;
+  max-width: 220px;
+}
+.kr-icon { font-size: 13px; }
+.kr-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kr-remove {
+  background: none;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  transition: color 0.2s;
+}
+.kr-remove:hover { color: #ef4444; }
+
+/* Reply bar above input */
+.reply-bar {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0f7ff;
+  border-left: 3px solid #00A8FF;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  gap: 8px;
+}
+.reply-bar__content { flex: 1; min-width: 0; }
+.reply-bar__label { font-size: 11px; font-weight: 600; color: #00A8FF; margin-bottom: 2px; }
+.reply-bar__text { font-size: 12px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reply-bar__close {
+  background: none; border: none; cursor: pointer; font-size: 16px;
+  color: #999; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.reply-bar__close:hover { background: #e0e0e0; color: #333; }
+
+/* Highlight flash when scrolling to quoted message */
+@keyframes highlight-flash {
+  0% { background: rgba(0, 168, 255, 0.2); }
+  100% { background: transparent; }
+}
+.highlight-flash { animation: highlight-flash 1.5s ease-out; }

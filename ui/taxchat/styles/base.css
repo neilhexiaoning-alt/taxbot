@@ -1,0 +1,58 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, #E3F2FD 0%, #F5F5F5 50%, #FFF9E6 100%);
+  background-attachment: fixed;
+  color: var(--gray-800);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Global font size scaling via zoom */
+html[data-font-size="small"] .taxchat-app { zoom: 0.85; }
+html[data-font-size="medium"] .taxchat-app { zoom: 1; }
+html[data-font-size="large"] .taxchat-app { zoom: 1.15; }
+html[data-font-size="xlarge"] .taxchat-app { zoom: 1.35; }
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--bg-pattern);
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.taxchat-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin: 12px;
+  overflow: hidden;
+}

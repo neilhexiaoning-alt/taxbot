@@ -1,0 +1,205 @@
+/* ========== Notification Dropdown ========== */
+.notif-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 320px;
+  max-height: 400px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+}
+.notif-dropdown__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+.notif-dropdown__actions {
+  display: flex;
+  gap: 4px;
+}
+.notif-dropdown__clear {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.notif-dropdown__clear:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+.notif-dropdown__list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 340px;
+}
+.notif-dropdown__empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 32px 16px;
+}
+
+/* ========== Notification Items ========== */
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: all 0.15s;
+  align-items: flex-start;
+}
+.notif-item:hover {
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.notif-item__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.notif-item__body {
+  flex: 1;
+  min-width: 0;
+}
+.notif-item__text {
+  font-size: 13px;
+  color: var(--gray-700, #374151);
+  line-height: 1.5;
+  word-break: break-all;
+}
+.notif-item__time {
+  font-size: 11px;
+  color: var(--gray-400, #9ca3af);
+  margin-top: 4px;
+}
+.notif-item__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--gray-300, #d1d5db);
+  padding: 0 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.notif-item:hover .notif-item__remove {
+  opacity: 1;
+}
+.notif-item__remove:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+.notif-clear-btn {
+  background: none;
+  border: 1px solid var(--gray-200, #e5e7eb);
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--gray-500, #6b7280);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.notif-clear-btn:hover {
+  background: var(--gray-50, #f9fafb);
+  color: var(--gray-700, #374151);
+}
+
+/* ========== Read / Unread State ========== */
+.notif-item__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.notif-item--read {
+  opacity: 0.6;
+}
+.notif-item--read .notif-item__text {
+  font-weight: 400;
+}
+
+/* ========== Clickable Notification Items ========== */
+.notif-item--clickable,
+.notif-item--task {
+  cursor: pointer;
+}
+.notif-item--task {
+  background: #fffbeb;
+}
+.notif-item--task:hover {
+  background: #fef3c7;
+}
+.notif-item__hint {
+  font-size: 10px;
+  color: #f59e0b;
+  margin-top: 2px;
+}
+
+/* ========== Notification Detail Popup ========== */
+.notif-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-detail-dialog {
+  background: white;
+  border-radius: 14px;
+  padding: 28px 32px;
+  width: 380px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+.notif-detail-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+.notif-detail-text {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+.notif-detail-time {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+.notif-detail-close {
+  background: none;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  padding: 7px 28px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.notif-detail-close:hover {
+  background: #f9fafb;
+}

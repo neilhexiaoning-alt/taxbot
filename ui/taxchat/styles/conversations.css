@@ -1,0 +1,70 @@
+/* ─── Conversations panel ─── */
+.conv-new-btn {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 10px 12px; margin-bottom: 8px;
+  background: linear-gradient(135deg, #00A8FF, #0090e0);
+  color: #fff; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: opacity 0.15s;
+}
+.conv-new-btn:hover { opacity: 0.85; }
+.conv-list { display: flex; flex-direction: column; gap: 2px; }
+.conv-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s;
+}
+.conv-item:hover { background: #f0f4f8; }
+.conv-item--active { background: #e8f4ff; border-left: 3px solid #00A8FF; }
+.conv-item__main { flex: 1; min-width: 0; }
+.conv-item__title {
+  font-size: 13px; font-weight: 500; color: #1a1a2e;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.conv-item__meta {
+  font-size: 11px; color: #999; margin-top: 2px;
+}
+.conv-item__actions {
+  display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s;
+}
+.conv-item:hover .conv-item__actions { opacity: 1; }
+.conv-action-btn {
+  width: 24px; height: 24px; border: none; border-radius: 4px;
+  background: transparent; color: #888; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.conv-action-btn:hover { background: #e0e4e8; color: #333; }
+.conv-action-btn--danger:hover { background: #fee; color: #ef4444; }
+.conv-rename-input {
+  width: 100%; padding: 4px 8px; font-size: 13px;
+  border: 1px solid #00A8FF; border-radius: 4px; outline: none;
+  background: #fff; color: #1a1a2e;
+}
+.conv-delete-confirm {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; color: #ef4444;
+}
+.conv-confirm-yes, .conv-confirm-no {
+  padding: 2px 8px; border: none; border-radius: 4px; cursor: pointer;
+  font-size: 11px; font-weight: 600;
+}
+.conv-confirm-yes { background: #ef4444; color: #fff; }
+.conv-confirm-yes:hover { background: #dc2626; }
+.conv-confirm-no { background: #e5e7eb; color: #666; }
+.conv-confirm-no:hover { background: #d1d5db; }
+
+/* Unread & replying indicators */
+.conv-item--unread { background: #fffbeb; }
+.conv-item--unread:hover { background: #fef3c7; }
+.conv-unread-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: #f59e0b; margin-right: 5px; vertical-align: middle;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.4);
+}
+.conv-replying {
+  color: #0284c7; font-weight: 500; margin-right: 4px;
+  animation: conv-replying-pulse 1.5s ease-in-out infinite;
+}
+@keyframes conv-replying-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

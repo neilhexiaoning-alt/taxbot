@@ -1,0 +1,107 @@
+/* ========== Skills Tab Bar ========== */
+.skills-tab-bar {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.skills-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.skills-tab:hover {
+  color: #6b7280;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.skills-tab.active {
+  color: #2E5484;
+  border-bottom-color: #2E5484;
+}
+
+/* ========== Custom Skill Items ========== */
+.skill-item { display: flex; gap: 10px; padding: 10px 12px; border-radius: 8px; margin-bottom: 4px; align-items: center; transition: all 0.15s; }
+.skill-item:hover { background: white; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); }
+.skill-item__emoji { font-size: 22px; flex-shrink: 0; }
+.skill-item__body { flex: 1; min-width: 0; }
+.skill-item__name { font-size: 13px; font-weight: 600; color: var(--gray-700, #374151); }
+.skill-item__desc { font-size: 11px; color: var(--gray-400, #9ca3af); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-item__actions { display: flex; gap: 2px; flex-shrink: 0; }
+.skill-item__btn { background: none; border: none; cursor: pointer; font-size: 13px; padding: 3px 6px; border-radius: 4px; opacity: 0.5; transition: opacity 0.15s, background 0.15s; }
+.skill-item__btn:hover { background: var(--gray-100, #f3f4f6); opacity: 1; }
+.skill-item__btn.pinned { color: #1a73e8; opacity: 1; }
+.skill-item--custom { background: #fafbfc; border: 1px solid #eef0f2; }
+.skill-item--custom:hover { background: white; border-color: #dde1e5; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); }
+.skill-item--builtin { background: linear-gradient(135deg, rgba(0,168,255,0.05), rgba(0,168,255,0.02)); border: 1px solid rgba(0,168,255,0.12); border-radius: 8px; }
+.skill-item--builtin:hover { background: linear-gradient(135deg, rgba(0,168,255,0.10), rgba(0,168,255,0.04)); box-shadow: none; }
+.skill-builtin-badge { font-size: 10px; color: #1e88e5; background: rgba(30,136,229,0.10); padding: 1px 6px; border-radius: 8px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+.skill-section-header { display: flex; align-items: center; gap: 6px; padding: 8px 12px 4px; cursor: pointer; user-select: none; }
+.skill-section-header:hover { background: rgba(0,0,0,0.02); border-radius: 6px; }
+.skill-section-arrow { font-size: 12px; color: #9ca3af; transition: transform 0.2s; display: inline-block; }
+.skill-section-arrow.collapsed { transform: rotate(-90deg); }
+.skill-section-count { font-size: 10px; color: #b0b7c0; background: #f0f2f4; padding: 0 6px; border-radius: 8px; line-height: 18px; }
+.skill-section-label { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 8px 0 4px; }
+.skill-add-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.skill-add-btn { flex: 1; padding: 10px; border: 1px dashed var(--gray-300, #d1d5db); border-radius: 8px; background: none; cursor: pointer; color: var(--gray-500, #6b7280); font-size: 13px; transition: all 0.15s; }
+.skill-add-btn:hover { border-color: #1a73e8; color: #1a73e8; background: rgba(26, 115, 232, 0.04); }
+
+/* ========== Skill Editor Modal ========== */
+.skill-editor-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.skill-editor { background: white; border-radius: 12px; width: 640px; max-width: 90vw; max-height: 80vh; overflow-y: auto; padding: 20px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); }
+.skill-editor h3 { margin: 0 0 16px; font-size: 16px; }
+.skill-editor label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600, #4b5563); margin-bottom: 4px; margin-top: 12px; }
+.skill-editor label:first-of-type { margin-top: 0; }
+.skill-editor input, .skill-editor textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+.skill-editor textarea { min-height: 200px; resize: vertical; font-family: inherit; }
+.skill-editor__actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.skill-editor__actions button { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.skill-editor__cancel { background: none; border: 1px solid var(--gray-200, #e5e7eb); color: var(--gray-600, #4b5563); }
+.skill-editor__cancel:hover { background: var(--gray-50, #f9fafb); }
+.skill-editor__save { background: #1a73e8; border: none; color: white; font-weight: 600; }
+.skill-editor__save:hover:not(:disabled) { background: #1557b0; }
+.skill-editor__save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Skill prompt bubble */
+.skill-prompt-bubble { width: 100%; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: linear-gradient(135deg, rgba(26,115,232,0.08), rgba(0,168,255,0.06)); border: 1px solid rgba(26,115,232,0.2); border-radius: 8px; font-size: 12px; color: var(--gray-600, #4b5563); }
+.skill-prompt-bubble__emoji { font-size: 16px; flex-shrink: 0; }
+.skill-prompt-bubble__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.skill-prompt-bubble__close { background: none; border: none; cursor: pointer; color: var(--gray-400, #9ca3af); font-size: 13px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+.skill-prompt-bubble__close:hover { color: var(--gray-600, #4b5563); }
+
+/* ========== Skills Panel (standalone) ========== */
+.skills-panel {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+  border-left: 0px solid rgba(0, 168, 255, 0.15);
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+}
+.skills-panel.open {
+  width: 420px;
+  border-left-width: 1px;
+}
+.skills-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, rgba(0,168,255,0.06), rgba(0,168,255,0.02));
+}
+.skills-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}

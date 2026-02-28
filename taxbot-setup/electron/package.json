@@ -1,0 +1,7 @@
+{
+  "name": "openclaw-desktop",
+  "version": "1.0.0",
+  "description": "Taxbot桌面应用",
+  "main": "main.cjs",
+  "type": "commonjs"
+}

@@ -1,0 +1,63 @@
+/* ========== Command Palette ========== */
+.command-palette {
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  right: 16px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 80;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.command-item:last-child {
+  border-bottom: none;
+}
+
+.command-item:hover,
+.command-item.active {
+  background: rgba(46, 84, 132, 0.06);
+}
+
+.command-item.active {
+  background: rgba(46, 84, 132, 0.1);
+}
+
+.command-emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.command-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.command-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  font-family: monospace;
+}
+
+.command-desc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 1px;
+}

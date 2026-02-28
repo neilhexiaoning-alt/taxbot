@@ -1,0 +1,390 @@
+/* ========== TaxStore Marketplace Panel ========== */
+
+/* Login Form */
+.ts-login {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ts-login-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.ts-login-desc {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.ts-login input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.ts-login input:focus {
+  border-color: #2E5484;
+  box-shadow: 0 0 0 2px rgba(46, 84, 132, 0.12);
+}
+
+.ts-login-btn {
+  padding: 8px 16px;
+  background: #2E5484;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ts-login-btn:hover {
+  background: #1B3A5C;
+}
+
+.ts-login-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.ts-login-error {
+  font-size: 12px;
+  color: #ef4444;
+  text-align: center;
+}
+
+/* User Info Bar */
+.ts-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(46, 84, 132, 0.05);
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.ts-user-name {
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-points-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ts-logout-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.ts-logout-btn:hover {
+  color: #ef4444;
+}
+
+/* Search & Filter Bar */
+.ts-filter-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ts-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+}
+
+.ts-search-input:focus {
+  border-color: #2E5484;
+}
+
+.ts-sort-btn {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 11px;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.ts-sort-btn.active {
+  background: rgba(46, 84, 132, 0.08);
+  border-color: #2E5484;
+  color: #2E5484;
+}
+
+/* Skills List */
+.ts-skills-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* Skill Card */
+.ts-skill-card {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.ts-skill-card:hover {
+  background: rgba(46, 84, 132, 0.03);
+}
+
+.ts-skill-card:last-child {
+  border-bottom: none;
+}
+
+.ts-skill-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ts-skill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  min-width: 0;
+}
+
+.ts-skill-version {
+  font-size: 10px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.ts-skill-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ts-skill-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ts-skill-rating {
+  color: #f59e0b;
+}
+
+.ts-skill-cost {
+  font-weight: 600;
+}
+
+.ts-skill-cost.free {
+  color: #10b981;
+}
+
+.ts-skill-cost.paid {
+  color: #f59e0b;
+}
+
+.ts-install-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border: 1px solid #2E5484;
+  border-radius: 5px;
+  background: white;
+  color: #2E5484;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ts-install-btn:hover {
+  background: #2E5484;
+  color: white;
+}
+
+.ts-install-btn.installed {
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: default;
+}
+
+.ts-install-btn.installed:hover {
+  background: white;
+  color: #9ca3af;
+}
+
+/* Install Progress */
+.ts-install-progress {
+  margin-left: auto;
+  font-size: 11px;
+  color: #2E5484;
+  font-weight: 500;
+  animation: ts-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ts-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Pagination */
+.ts-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.ts-page-btn {
+  padding: 4px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.ts-page-btn:hover {
+  background: #f3f4f6;
+}
+
+.ts-page-btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* Loading / Empty / Error */
+.ts-loading {
+  text-align: center;
+  padding: 24px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.ts-empty {
+  text-align: center;
+  padding: 24px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.ts-error {
+  text-align: center;
+  padding: 12px;
+  color: #ef4444;
+  font-size: 12px;
+}
+
+/* Update Banner */
+.ts-update-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  font-size: 12px;
+  color: #92400e;
+}
+
+.ts-update-banner-icon {
+  flex-shrink: 0;
+}
+
+.ts-update-banner-text {
+  flex: 1;
+}
+
+/* Category Tags */
+.ts-category-bar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.ts-category-bar::-webkit-scrollbar {
+  height: 0;
+}
+
+.ts-cat-tag {
+  padding: 3px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  font-size: 11px;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.ts-cat-tag.active {
+  background: #2E5484;
+  border-color: #2E5484;
+  color: white;
+}
+
+.ts-cat-tag:hover:not(.active) {
+  border-color: #2E5484;
+  color: #2E5484;
+}

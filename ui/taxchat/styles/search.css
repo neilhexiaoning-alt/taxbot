@@ -1,0 +1,78 @@
+/* ========== Message Search Bar ========== */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.search-bar input {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.search-bar input:focus {
+  border-color: #2E5484;
+  box-shadow: 0 0 0 2px rgba(46, 84, 132, 0.15);
+}
+
+.search-count {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: center;
+}
+
+.search-nav-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #374151;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.search-nav-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.search-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.search-close-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Search result highlight on message */
+.search-highlight {
+  outline: 2px solid #f59e0b !important;
+  outline-offset: 2px;
+  animation: search-flash 0.6s ease;
+}
+
+@keyframes search-flash {
+  0%, 100% { outline-color: #f59e0b; }
+  50% { outline-color: #fbbf24; }
+}

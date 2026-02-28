@@ -1,0 +1,1967 @@
+/* Agent Rental — publish button, dialog, task panel, task cards */
+
+/* ─── Rental badge on agent cards ─── */
+.agent-rental-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.agent-rental-badge--active {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+}
+.agent-rental-badge--btn {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #0369a1;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.agent-rental-badge--btn:hover {
+  background: linear-gradient(135deg, #bae6fd, #7dd3fc);
+}
+
+/* ─── Publish Dialog (Modal) ─── */
+.rental-publish-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rental-publish-dialog {
+  background: white;
+  border-radius: 14px;
+  width: 460px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px 28px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+.rental-publish-dialog h3 {
+  margin: 0 0 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rental-publish-agent-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.rental-publish-agent-emoji {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0f2fe;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.rental-publish-agent-emoji img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.rental-publish-agent-info {
+  min-width: 0;
+}
+.rental-publish-agent-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.rental-publish-agent-desc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rental-field {
+  margin-bottom: 14px;
+}
+.rental-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+.rental-field input,
+.rental-field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.rental-field input:focus,
+.rental-field textarea:focus {
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.08);
+}
+.rental-field textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.rental-field-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.rental-publish-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+.rental-publish-actions button {
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rental-btn-cancel {
+  background: none;
+  border: none;
+  color: #9ca3af;
+}
+.rental-btn-cancel:hover {
+  color: #4b5563;
+  background: none;
+}
+.rental-btn-publish {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: white;
+}
+.rental-btn-publish:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+.rental-btn-publish:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Task Panel (Side Panel) ─── */
+.rental-task-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rental-task-panel {
+  background: white;
+  border-radius: 14px;
+  width: 560px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px 28px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+.rental-task-panel h3 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rental-task-info {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.rental-task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.rental-task-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+.rental-task-content {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* ─── Centered agent action button ─── */
+.rental-task-agent-action {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.rental-task-agent-action .rental-btn-agent {
+  padding: 10px 28px;
+  font-size: 14px;
+}
+.rental-task-agent-action .rental-agent-processing {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.rental-task-result-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+.rental-task-result-area {
+  width: 100%;
+  min-height: 160px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.rental-task-result-area:focus {
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.08);
+}
+.rental-task-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+.rental-task-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+.rental-btn-submit {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  color: white;
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rental-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+.rental-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rental-btn-agent {
+  background: linear-gradient(135deg, #00A8FF, #0090e0);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rental-btn-agent:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.rental-btn-agent:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Agent processing indicator ─── */
+.rental-agent-processing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #0369a1;
+}
+.rental-processing-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rental-processing-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
+  vertical-align: middle;
+}
+.rental-processing-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+.rental-agent-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #bae6fd;
+  border-top-color: #0369a1;
+  border-radius: 50%;
+  animation: rental-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes rental-spin {
+  to { transform: rotate(360deg); }
+}
+.rental-task-result-area[readonly] {
+  background: #f8fafc;
+  color: #374151;
+}
+
+/* ─── Tab bar in agents panel ─── */
+.rental-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.rental-tab {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.rental-tab:hover {
+  color: #374151;
+  background: rgba(255, 255, 255, 0.5);
+}
+.rental-tab--active {
+  color: #0ea5e9;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+}
+.rental-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  background: #ef4444;
+  border-radius: 9px;
+}
+.rental-tasks-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* ─── Pending tasks section in agents panel ─── */
+.rental-tasks-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+.rental-tasks-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.rental-tasks-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rental-tasks-count {
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.rental-task-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rental-task-card:hover {
+  background: #f0f7ff;
+}
+.rental-task-card-emoji {
+  font-size: 20px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.rental-task-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.rental-task-card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rental-task-card-desc {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rental-task-card-price {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+.rental-task-card-price--earned {
+  color: #10b981;
+}
+
+/* ─── Uniform agent card height ─── */
+.agent-card-uniform {
+  align-items: center;
+  padding-top: 12px; padding-bottom: 12px;
+}
+.agent-card-uniform .skill-item__body {
+  display: flex; flex-direction: column; justify-content: center;
+}
+.agent-card-rental-line {
+  margin-top: 3px;
+  min-height: 18px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px;
+}
+.agent-card-stats {
+  color: #9ca3af; font-size: 10px;
+}
+
+/* ─── Completed tasks section ─── */
+.rental-completed-count {
+  background: #10b981;
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.rental-task-card--completed {
+  cursor: pointer;
+}
+.rental-task-card--completed:hover {
+  background: #f0fdf4;
+}
+.rental-task-card-rating {
+  font-size: 10px;
+  margin-top: 2px;
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rental-task-card-comment {
+  color: #9ca3af;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+/* ─── View More Button ─── */
+.rental-tasks-more {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 1px dashed #d1d5db;
+  color: #6b7280;
+  font-size: 12px;
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s;
+}
+.rental-tasks-more:hover {
+  border-color: #0369a1;
+  color: #0369a1;
+  background: #f0f7ff;
+}
+
+/* ─── Task List Dialog ─── */
+.rental-tasklist-dialog {
+  background: white;
+  border-radius: 14px;
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+.rental-tasklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.rental-tasklist-header h3 {
+  margin: 0;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rental-tasklist-badge {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: white;
+}
+.rental-tasklist-badge--pending {
+  background: #ef4444;
+}
+.rental-tasklist-badge--done {
+  background: #10b981;
+}
+.rental-tasklist-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.rental-tasklist-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+.rental-tasklist-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+.rental-tasklist-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 32px 0;
+}
+
+/* ─── Task List Items ─── */
+.rental-tasklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+}
+.rental-tasklist-item--pending:hover {
+  background: #f0f7ff;
+}
+.rental-tasklist-item--done:hover {
+  background: #f0fdf4;
+}
+.rental-tasklist-item-emoji {
+  font-size: 22px;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.rental-tasklist-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.rental-tasklist-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rental-tasklist-item-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.rental-tasklist-item-rating {
+  font-size: 10px;
+  margin-top: 2px;
+  color: #f59e0b;
+}
+.rental-tasklist-item-right {
+  flex-shrink: 0;
+  text-align: right;
+}
+.rental-tasklist-item-price {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+.rental-tasklist-item-action {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.rental-tasklist-item:hover .rental-tasklist-item-action {
+  color: #0369a1;
+}
+
+/* ─── Task Detail View ─── */
+.rental-task-detail-result {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+.rental-task-detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+.rental-task-detail-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rental-task-detail-rating {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Task Attachments ─── */
+.rental-task-attachments {
+  margin-top: 8px;
+}
+.rental-task-attachments-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+}
+.rental-task-attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rental-task-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+.rental-task-attachment-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rental-task-attachment-size {
+  color: #9ca3af;
+  font-size: 11px;
+}
+.rental-task-attachment-remove {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.rental-task-attachment-remove:hover {
+  color: #ef4444;
+}
+.rental-task-attachment-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rental-task-attachment-add:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+.rental-task-client-attachments {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.rental-task-client-attachments a.rental-task-attachment-item {
+  color: #93c5fd;
+}
+.rental-task-client-attachments a.rental-task-attachment-item:hover {
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.3);
+}
+/* Image attachment previews */
+.rental-att-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.rental-att-img-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+  text-decoration: none;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.15);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+.rental-att-img-wrap:hover {
+  border-color: rgba(59,130,246,0.5);
+  box-shadow: 0 0 8px rgba(59,130,246,0.2);
+}
+.rental-att-img {
+  width: 100px;
+  height: 80px;
+  object-fit: cover;
+}
+.rental-att-img-name {
+  font-size: 10px;
+  color: #93c5fd;
+  padding: 3px 4px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+.rental-att-file-icon {
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+/* ─── Instruction Input for Revising Task Output ─── */
+.rental-task-instruction {
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+.rental-task-instruction-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+.rental-task-instruction-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.rental-task-instruction-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.rental-task-instruction-input:focus {
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.08);
+}
+.rental-task-instruction-input:disabled {
+  background: #f8fafc;
+  color: #9ca3af;
+}
+.rental-btn-revise {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rental-btn-revise:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+.rental-btn-revise:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Tag Selector ─── */
+.rental-tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.rental-tag-chip {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rental-tag-chip:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+.rental-tag-chip--active {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+  font-weight: 500;
+}
+
+/* ─── Messages Section ─── */
+.rental-messages-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+.rental-messages-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+.rental-messages-toggle:hover {
+  color: #0369a1;
+}
+.rental-messages-badge {
+  background: #0ea5e9;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 8px;
+  line-height: 16px;
+}
+.rental-messages-badge--unread {
+  background: #ef4444;
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+@keyframes pulse-badge { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.rental-task-msg-dot {
+  margin-left: 4px;
+  font-size: 11px;
+}
+.rental-messages-container {
+  margin-top: 8px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+}
+.rental-messages-list {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  padding: 2px;
+}
+.rental-messages-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 20px 0;
+}
+.rental-message-row {
+  margin-bottom: 6px;
+  display: flex;
+}
+.rental-message-row--mine {
+  justify-content: flex-end;
+}
+.rental-message-bubble {
+  max-width: 80%;
+  padding: 7px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.rental-message-bubble--mine {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border-bottom-right-radius: 3px;
+}
+.rental-message-bubble--other {
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-bottom-left-radius: 3px;
+}
+.rental-message-sender {
+  font-size: 10px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.rental-message-bubble--mine .rental-message-sender {
+  opacity: 0.75;
+}
+.rental-message-bubble--other .rental-message-sender {
+  color: #0369a1;
+}
+.rental-message-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.rental-message-time {
+  font-size: 9px;
+  text-align: right;
+  margin-top: 3px;
+}
+.rental-message-bubble--mine .rental-message-time {
+  opacity: 0.6;
+}
+.rental-message-bubble--other .rental-message-time {
+  color: #9ca3af;
+}
+.rental-messages-input-row {
+  display: flex;
+  gap: 6px;
+}
+.rental-messages-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.rental-messages-input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+}
+.rental-messages-input::placeholder {
+  color: #9ca3af;
+}
+.rental-messages-send {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border: none;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.rental-messages-send:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.rental-messages-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Consult Panel — native agent marketplace within Taxbot
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Search Bar ─── */
+/* ─── Flow Introduction ─── */
+.consult-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 12px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #f0f9ff, #eff6ff);
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+.consult-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+.consult-flow-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(2, 132, 199, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.consult-flow-icon svg {
+  display: block;
+}
+.consult-flow-icon--done {
+  background: rgba(5, 150, 105, 0.1);
+}
+.consult-flow-label {
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+}
+.consult-flow-arrow {
+  flex-shrink: 0;
+  margin: 0 2px;
+  display: flex;
+  align-items: center;
+}
+.consult-flow-arrow svg {
+  display: block;
+}
+/* ─── Info Boxes below flow ─── */
+.consult-info-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.consult-info-box {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(2, 132, 199, 0.15);
+  background: rgba(2, 132, 199, 0.04);
+  min-width: 0;
+}
+.consult-info-box--stats {
+  background: #f8fafc;
+  border-color: #e5e7eb;
+  flex: 0 0 auto;
+  min-width: 130px;
+}
+.consult-info-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+}
+.consult-info-icon svg {
+  display: block;
+}
+.consult-info-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.consult-info-desc {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* ─── Search Bar ─── */
+.consult-search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.consult-search-bar input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.consult-search-bar input:focus {
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.08);
+}
+.consult-search-bar button {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #00A8FF, #0090e0);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.consult-search-bar button:hover { opacity: 0.85; }
+
+/* ─── Loading / Empty ─── */
+.consult-loading,
+.consult-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ─── Agent Grid (Card Layout) ─── */
+.consult-agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.consult-agent-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.consult-agent-card:hover {
+  border-color: #00A8FF;
+  box-shadow: 0 4px 16px rgba(0, 168, 255, 0.12);
+  transform: translateY(-1px);
+}
+.consult-agent-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.consult-agent-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
+  overflow: hidden;
+}
+.consult-agent-avatar img {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.consult-agent-header {
+  flex: 1;
+  min-width: 0;
+}
+.consult-agent-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.consult-agent-owner {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+.consult-agent-desc {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.consult-agent-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+.consult-agent-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.consult-agent-rating {
+  color: #f59e0b;
+  font-weight: 500;
+}
+.consult-agent-tasks {
+  color: #10b981;
+}
+.consult-agent-price {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* ─── My Tasks Button ─── */
+.consult-mytasks-btn {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.15);
+}
+.consult-mytasks-btn:hover {
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+  border-color: #d97706;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+}
+
+/* ─── Back Button ─── */
+.consult-back-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 12px;
+  transition: color 0.15s;
+}
+.consult-back-btn:hover {
+  color: #00A8FF;
+}
+
+/* ─── Agent Detail ─── */
+.consult-detail-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.consult-detail-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 32px;
+  overflow: hidden;
+}
+.consult-detail-avatar img {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  object-fit: cover;
+}
+.consult-detail-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.consult-detail-owner {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.consult-detail-desc {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.consult-detail-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ─── Login Hint ─── */
+.consult-login-hint {
+  text-align: center;
+  padding: 24px 16px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ─── Task Form ─── */
+.consult-form h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 14px;
+}
+.consult-field {
+  margin-bottom: 14px;
+}
+.consult-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+.consult-field input,
+.consult-field textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.consult-field input:focus,
+.consult-field textarea:focus {
+  border-color: #00A8FF;
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.08);
+}
+.consult-field textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.consult-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+.consult-form-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+.consult-submit-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.consult-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+.consult-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── My Tasks List ─── */
+.consult-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.consult-task-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.consult-task-item:hover {
+  border-color: #00A8FF;
+  box-shadow: 0 1px 6px rgba(0, 168, 255, 0.08);
+}
+.consult-task-item--completed {
+  border-left: 3px solid #10b981;
+}
+.consult-task-item--pending {
+  border-left: 3px solid #f59e0b;
+}
+.consult-task-item--processing {
+  border-left: 3px solid #0ea5e9;
+}
+.consult-task-item-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.consult-task-item-icon img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.consult-task-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.consult-task-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.consult-task-item-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.consult-task-item-right {
+  flex-shrink: 0;
+  text-align: right;
+}
+.consult-task-msg-badge {
+  display: inline-block;
+  font-size: 11px;
+  color: #6366f1;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.consult-task-item-price {
+  font-size: 11px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+.consult-task-item-status {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 4px;
+  display: inline-block;
+}
+.consult-task-item-status--done {
+  background: #d1fae5;
+  color: #065f46;
+}
+.consult-task-item-status--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+.consult-task-item-status--processing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* ─── Task Detail ─── */
+.consult-task-detail {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+}
+.consult-task-detail-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.consult-task-detail-emoji {
+  font-size: 28px;
+}
+.consult-task-detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.consult-task-detail-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.consult-task-detail-section {
+  margin-bottom: 16px;
+}
+.consult-task-detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+.consult-task-detail-content {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+.consult-task-detail-result {
+  font-size: 13px;
+  color: #065f46;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 14px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+.consult-task-detail-waiting {
+  text-align: center;
+  padding: 24px;
+  color: #6b7280;
+  font-size: 14px;
+  background: #fffbeb;
+  border-radius: 8px;
+}
+.consult-task-detail-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #6b7280;
+}
+.consult-task-detail-status--completed { color: #10b981; font-weight: 600; }
+.consult-task-detail-status--pending { color: #f59e0b; font-weight: 600; }
+.consult-task-detail-status--processing { color: #0ea5e9; font-weight: 600; }
+
+/* Attachment upload in form */
+.consult-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.consult-att-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.consult-att-icon { font-size: 14px; flex-shrink: 0; }
+.consult-att-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374151;
+}
+.consult-att-size { color: #9ca3af; flex-shrink: 0; }
+.consult-att-remove {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.consult-att-remove:hover { color: #ef4444; }
+.consult-att-uploading {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 6px 10px;
+}
+.consult-att-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.consult-att-add-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+
+/* Attachment display in task detail */
+.consult-att-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.consult-att-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+.consult-att-link:hover { background: #f3f4f6; }
+.consult-att-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.consult-att-file-icon { font-size: 20px; flex-shrink: 0; }
+.consult-att-link-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.consult-att-link-size { color: #9ca3af; flex-shrink: 0; }
+
+/* ─── Task Detail Action Buttons ──────────────────────────── */
+.consult-td-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-top: 1px solid #f3f4f6;
+}
+.consult-td-action-btn {
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.consult-td-action-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+.consult-td-action-btn--revision:hover { background: #fffbeb; border-color: #fbbf24; }
+.consult-td-action-btn--rating:hover { background: #fef3c7; border-color: #f59e0b; }
+
+/* ─── Already Rated ───────────────────────────────────────── */
+.consult-td-rated {
+  padding: 12px;
+  background: #fffbeb;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+}
+.consult-td-rated-stars {
+  font-size: 18px;
+  color: #f59e0b;
+  letter-spacing: 2px;
+}
+.consult-td-rated-comment {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #92400e;
+}
+
+/* ─── Shared Panel Styles ─────────────────────────────────── */
+.consult-td-panel {
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+.consult-td-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+.consult-td-panel-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.consult-td-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.consult-td-input:focus { outline: none; border-color: #6366f1; }
+.consult-td-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.consult-td-btn-cancel {
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.consult-td-btn-cancel:hover { background: #f3f4f6; }
+.consult-td-btn-submit {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.consult-td-btn-submit:hover:not(:disabled) { background: #4f46e5; }
+.consult-td-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Rating Stars ────────────────────────────────────────── */
+.consult-td-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.consult-td-star {
+  font-size: 24px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: color 0.1s;
+  user-select: none;
+}
+.consult-td-star--active { color: #f59e0b; }
+.consult-td-star:hover { color: #fbbf24; }
+.consult-td-star-label {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ─── Messages Panel ──────────────────────────────────────── */
+.consult-td-messages {
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+.consult-td-msg-list {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.consult-td-msg-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 20px 0;
+}
+.consult-td-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+.consult-td-msg--mine { align-self: flex-end; align-items: flex-end; }
+.consult-td-msg--theirs { align-self: flex-start; align-items: flex-start; }
+.consult-td-msg-sender {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+.consult-td-msg-bubble {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.consult-td-msg--mine .consult-td-msg-bubble {
+  background: #6366f1;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.consult-td-msg--theirs .consult-td-msg-bubble {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-bottom-left-radius: 4px;
+}
+.consult-td-msg-time {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.consult-td-msg-input-row {
+  display: flex;
+  gap: 6px;
+}
+.consult-td-msg-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.consult-td-msg-input:focus { outline: none; border-color: #6366f1; }
+.consult-td-msg-send {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.consult-td-msg-send:hover:not(:disabled) { background: #4f46e5; }
+.consult-td-msg-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.consult-td-msg-closed {
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 8px 0 2px;
+}
+
