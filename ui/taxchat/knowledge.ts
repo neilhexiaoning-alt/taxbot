@@ -277,6 +277,103 @@ export function registerWatcherListener() {
   });
 }
 
+// ─── Knowledge File Preview ─────────────────────────────────
+export async function openKnowledgePreview(file: { name: string; type: string }) {
+  state.knowledgePreview = { name: file.name, type: "text", content: "", url: "", loading: true, error: null };
+  scheduleRender();
+  const api = (window as any).electronAPI;
+  if (!api?.previewKnowledgeFile) {
+    state.knowledgePreview.error = "预览功能不可用";
+    state.knowledgePreview.loading = false;
+    scheduleRender();
+    return;
+  }
+  try {
+    const result = await api.previewKnowledgeFile(state.authorizedFolder, file.name, file.type);
+    if (!state.knowledgePreview) return; // closed while loading
+    if (result.ok) {
+      state.knowledgePreview.type = result.type;
+      state.knowledgePreview.content = result.content || "";
+      state.knowledgePreview.url = result.url || "";
+      // PDF: use extracted text from preview response
+      if (result.extractedText) {
+        state.knowledgePreview.extractedText = result.extractedText;
+      }
+    } else {
+      state.knowledgePreview.type = "unsupported";
+      state.knowledgePreview.error = result.error || "预览失败";
+    }
+  } catch (err: any) {
+    if (state.knowledgePreview) {
+      state.knowledgePreview.error = "预览失败: " + (err?.message || "未知错误");
+    }
+  }
+  if (state.knowledgePreview) {
+    state.knowledgePreview.loading = false;
+  }
+  scheduleRender();
+}
+
+export function closeKnowledgePreview() {
+  state.knowledgePreview = null;
+  state.knowledgeQuoteBtn = null;
+  scheduleRender();
+}
+
+// ─── Knowledge Quote (text selection in preview) ────────────
+export function handlePreviewMouseUp(e: MouseEvent) {
+  const sel = window.getSelection();
+  const text = sel?.toString().trim();
+  if (!text || text.length < 2) {
+    state.knowledgeQuoteBtn = null;
+    scheduleRender();
+    return;
+  }
+  const range = sel!.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  const el = e.currentTarget as HTMLElement;
+  const containerRect = el.getBoundingClientRect();
+  state.knowledgeQuoteBtn = {
+    visible: true,
+    x: rect.left - containerRect.left + rect.width / 2 + el.scrollLeft,
+    y: rect.top - containerRect.top - 36 + el.scrollTop,
+    text,
+  };
+  scheduleRender();
+}
+
+export function quoteSelectedText() {
+  if (!state.knowledgeQuoteBtn?.text || !state.knowledgePreview) return;
+  const fileName = state.knowledgePreview.name;
+  const quote = `> 「${fileName}」${state.knowledgeQuoteBtn.text}\n\n`;
+  state.draft = quote + state.draft;
+  state.knowledgeQuoteBtn = null;
+  window.getSelection()?.removeAllRanges();
+  scheduleRender();
+  // Focus input and trigger auto-resize (programmatic .value change doesn't fire @input)
+  setTimeout(() => {
+    if (state.inputRef) {
+      state.inputRef.focus();
+      state.inputRef.style.height = "auto";
+      state.inputRef.style.height = state.inputRef.scrollHeight + "px";
+    }
+  }, 50);
+}
+
+export function togglePdfTextMode() {
+  if (!state.knowledgePreview) return;
+  state.knowledgePreview.pdfTextMode = !state.knowledgePreview.pdfTextMode;
+  state.knowledgeQuoteBtn = null;
+  scheduleRender();
+}
+
+export function hideQuoteBtn() {
+  if (state.knowledgeQuoteBtn) {
+    state.knowledgeQuoteBtn = null;
+    scheduleRender();
+  }
+}
+
 let _skillsListenerRegistered = false;
 export function registerManagedSkillsListener() {
   if (_skillsListenerRegistered) return;

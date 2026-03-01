@@ -44,6 +44,8 @@ import {
   saveMessageToKnowledge,
   startWatcher, registerWatcherListener, registerManagedSkillsListener,
   knowledgeDragCounter, setKnowledgeDragCounter,
+  openKnowledgePreview, closeKnowledgePreview,
+  handlePreviewMouseUp, quoteSelectedText, hideQuoteBtn, togglePdfTextMode,
 } from "./taxchat/knowledge";
 import {
   loadModelConfig, saveModelConfig,
@@ -91,7 +93,7 @@ import {
   toggleConsultRating, submitConsultRating,
   loadMyListings, pollPendingTasks, loadCompletedTasks, pollConsultTasks,
 } from "./taxchat/rental";
-import { tsGetMe } from "./taxchat/taxstore-api";
+import { tsGetMe, tsCheckTaxbotUpdate, tsActivateLicense, tsVerifyLicense, tsApplyLicense } from "./taxchat/taxstore-api";
 
 // ─── Avatar URL Helper ──────────────────────────────────────
 /** Resolve agent avatar URL — handles data URLs, relative paths, and full URLs */
@@ -156,6 +158,170 @@ async function refreshAll() {
   state.lastRefreshTime = Date.now();
   showToast("数据已刷新");
   scheduleRender();
+}
+
+// ─── Version Update Check ─────────────────────────────────────
+async function checkForUpdate() {
+  if (state.updateChecking) return;
+  state.updateChecking = true;
+  scheduleRender();
+
+  try {
+    const info = await tsCheckTaxbotUpdate();
+    if (info && info.version && info.version !== TAXBOT_VERSION) {
+      state.updateAvailable = {
+        version: info.version,
+        changelog: info.changelog || "",
+        downloadUrl: info.downloadUrl || "https://taxbot.cc:8443/taxbot",
+      };
+    } else {
+      state.updateAvailable = null;
+      if (info && info.version === TAXBOT_VERSION) {
+        showToast("当前已是最新版本");
+      } else if (!info || !info.version) {
+        showToast("暂无可用版本信息");
+      }
+    }
+  } catch {
+    showToast("检查更新失败，请稍后重试");
+  }
+
+  state.updateChecking = false;
+  scheduleRender();
+}
+
+// ─── License / Authorization ─────────────────────────────────
+
+const TRIAL_DAYS = 7;
+
+function getDeviceId(): string {
+  const key = "taxbot_device_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = "tb-" + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function initLicenseCheck() {
+  // 1. Check local cached license
+  const cached = localStorage.getItem("taxbot_license");
+  if (cached) {
+    try {
+      const { code, expiresAt } = JSON.parse(cached);
+      if (expiresAt && expiresAt > Date.now()) {
+        state.licenseStatus = "licensed";
+        state.licenseExpiresAt = expiresAt;
+        state.licenseCode = code;
+        scheduleRender();
+        // Async verify with server
+        verifyLicenseWithServer();
+        return;
+      }
+    } catch { /* corrupted cache */ }
+  }
+
+  // 2. Check trial
+  const trialStr = localStorage.getItem("taxbot_trial_start");
+  if (trialStr) {
+    const trialStart = parseInt(trialStr, 10);
+    state.trialStartedAt = trialStart;
+    const elapsed = Date.now() - trialStart;
+    const trialMs = TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    if (elapsed < trialMs) {
+      state.licenseStatus = "trial";
+    } else {
+      state.licenseStatus = "expired";
+    }
+  } else {
+    // First run — start trial
+    const now = Date.now();
+    localStorage.setItem("taxbot_trial_start", String(now));
+    state.trialStartedAt = now;
+    state.licenseStatus = "trial";
+    showToast("欢迎使用 Taxbot！您有 7 天免费试用期");
+  }
+  scheduleRender();
+
+  // Async verify — maybe admin already assigned a license for this device
+  verifyLicenseWithServer();
+}
+
+async function verifyLicenseWithServer() {
+  const deviceId = getDeviceId();
+  const result = await tsVerifyLicense(deviceId);
+  if (result.licensed && result.expiresAt) {
+    const expiresAt = new Date(result.expiresAt).getTime();
+    state.licenseStatus = "licensed";
+    state.licenseExpiresAt = expiresAt;
+    localStorage.setItem("taxbot_license", JSON.stringify({ code: state.licenseCode || "server", expiresAt }));
+    scheduleRender();
+  } else if (state.licenseStatus === "licensed") {
+    // Server says not licensed but local says yes — check expiry
+    if (state.licenseExpiresAt && state.licenseExpiresAt < Date.now()) {
+      state.licenseStatus = "expired";
+      localStorage.removeItem("taxbot_license");
+      scheduleRender();
+    }
+  }
+}
+
+async function activateLicense() {
+  const code = state.licenseActivateCode.trim().toUpperCase();
+  if (!code) { showToast("请输入授权码"); return; }
+  state.licenseActivating = true;
+  scheduleRender();
+
+  const deviceId = getDeviceId();
+  const result = await tsActivateLicense(code, deviceId);
+
+  if (result.ok && result.expiresAt) {
+    const expiresAt = new Date(result.expiresAt).getTime();
+    state.licenseStatus = "licensed";
+    state.licenseExpiresAt = expiresAt;
+    state.licenseCode = code;
+    state.licenseActivateCode = "";
+    localStorage.setItem("taxbot_license", JSON.stringify({ code, expiresAt }));
+    showToast("授权激活成功！");
+  } else {
+    showToast(result.error || "激活失败");
+  }
+
+  state.licenseActivating = false;
+  scheduleRender();
+}
+
+async function submitLicenseApplication() {
+  const form = state.licenseApplyForm;
+  if (!form.email || !form.phone || !form.reason) { showToast("请填写完整信息"); return; }
+  state.licenseApplying = true;
+  scheduleRender();
+
+  const deviceId = getDeviceId();
+  const result = await tsApplyLicense(deviceId, form);
+
+  if (result.ok) {
+    state.licenseApplyResult = "success";
+    showToast("申请已提交，请等待管理员审核");
+  } else {
+    state.licenseApplyResult = "error";
+    showToast(result.error || "申请失败");
+  }
+
+  state.licenseApplying = false;
+  scheduleRender();
+}
+
+function getTrialDaysRemaining(): number {
+  if (!state.trialStartedAt) return TRIAL_DAYS;
+  const elapsed = Date.now() - state.trialStartedAt;
+  return Math.max(0, Math.ceil((TRIAL_DAYS * 24 * 60 * 60 * 1000 - elapsed) / (24 * 60 * 60 * 1000)));
+}
+
+function getLicenseDaysRemaining(): number {
+  if (!state.licenseExpiresAt) return 0;
+  return Math.max(0, Math.ceil((state.licenseExpiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
 // ─── Quick Skill Wrapper ──────────────────────────────────────
@@ -669,6 +835,60 @@ function renderApp() {
         </div>
       ` : ""}
 
+      ${state.licenseStatus === "trial" ? html`
+        <div class="license-banner">
+          <span class="license-banner__text">试用中 · 剩余 ${getTrialDaysRemaining()} 天</span>
+          <button class="license-banner__btn" @click=${() => { state.sidePanel = "settings"; state.settingsView = "license" as any; renderApp(); }}>激活授权码</button>
+          <button class="license-banner__btn secondary" @click=${() => { state.sidePanel = "settings"; state.settingsView = "license" as any; state.licenseView = "apply"; renderApp(); }}>申请授权</button>
+        </div>
+      ` : ""}
+
+      ${state.licenseStatus === "expired" ? html`
+        <div class="license-overlay">
+          <div class="license-overlay__card">
+            <div class="license-overlay__icon">🔒</div>
+            <h2 class="license-overlay__title">试用已过期</h2>
+            <p class="license-overlay__desc">您的 7 天免费试用期已结束，请输入授权码激活或申请授权。</p>
+            <div class="license-overlay__input-row">
+              <input type="text" class="license-overlay__input" placeholder="XXXX-XXXX-XXXX-XXXX"
+                .value=${state.licenseActivateCode}
+                @input=${(e: Event) => { state.licenseActivateCode = (e.target as HTMLInputElement).value; renderApp(); }}
+                @keydown=${(e: KeyboardEvent) => { if (e.key === "Enter") activateLicense(); }}
+              />
+              <button class="license-overlay__activate" @click=${activateLicense} .disabled=${state.licenseActivating}>
+                ${state.licenseActivating ? "激活中..." : "激活"}
+              </button>
+            </div>
+            <div class="license-overlay__divider"><span>或</span></div>
+            <button class="license-overlay__apply-btn" @click=${() => { state.licenseView = "apply"; renderApp(); }}>
+              申请使用授权
+            </button>
+            ${state.licenseView === "apply" ? html`
+              <div class="license-overlay__form">
+                <input type="email" placeholder="邮箱" .value=${state.licenseApplyForm.email}
+                  @input=${(e: Event) => { state.licenseApplyForm.email = (e.target as HTMLInputElement).value; }} />
+                <input type="tel" placeholder="手机号" .value=${state.licenseApplyForm.phone}
+                  @input=${(e: Event) => { state.licenseApplyForm.phone = (e.target as HTMLInputElement).value; }} />
+                <input type="text" placeholder="申请原因" .value=${state.licenseApplyForm.reason}
+                  @input=${(e: Event) => { state.licenseApplyForm.reason = (e.target as HTMLInputElement).value; }} />
+                <select .value=${state.licenseApplyForm.period}
+                  @change=${(e: Event) => { state.licenseApplyForm.period = (e.target as HTMLSelectElement).value; }}>
+                  <option value="30天">30天</option>
+                  <option value="90天" selected>90天</option>
+                  <option value="180天">180天</option>
+                  <option value="365天">365天</option>
+                </select>
+                <button class="license-overlay__submit" @click=${submitLicenseApplication} .disabled=${state.licenseApplying}>
+                  ${state.licenseApplying ? "提交中..." : "提交申请"}
+                </button>
+                ${state.licenseApplyResult === "success" ? html`<p class="license-overlay__result success">申请已提交，请等待管理员审核后将授权码发送给您</p>` : ""}
+                ${state.licenseApplyResult === "error" ? html`<p class="license-overlay__result error">提交失败，请稍后重试</p>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        </div>
+      ` : ""}
+
       <div class="taxchat-body">
         <nav class="taxchat-sidebar ${state.sidebarCollapsed ? "collapsed" : ""}">
           <div class="sidebar-menu">
@@ -873,6 +1093,55 @@ function renderApp() {
               <button class="side-panel-close" @click=${() => { state.sidePanel = null; renderApp(); }} title="关闭">✕</button>
             </div>
             <div class="side-panel-body">
+              ${state.knowledgePreview ? html`
+                <div class="knowledge-preview">
+                  <div class="knowledge-preview-header">
+                    <button class="knowledge-preview-back" @click=${() => closeKnowledgePreview()}>← 返回</button>
+                    <span class="knowledge-preview-name" title=${state.knowledgePreview.name}>${state.knowledgePreview.name}</span>
+                    <button class="knowledge-file-btn ref" @click=${() => { addKnowledgeRef(state.knowledgePreview!.name); }} title="引用到对话">引用</button>
+                    ${state.knowledgePreview.type === "pdf" && state.knowledgePreview.extractedText ? html`
+                      <button class="knowledge-preview-toggle" @click=${() => togglePdfTextMode()}
+                        title=${state.knowledgePreview.pdfTextMode ? "切换到PDF视图" : "切换到文本视图"}>
+                        ${state.knowledgePreview.pdfTextMode ? "PDF" : "文本"}
+                      </button>
+                    ` : ""}
+                  </div>
+                  <div class="knowledge-preview-body" style="position:relative;"
+                    @mouseup=${(e: MouseEvent) => handlePreviewMouseUp(e)}
+                    @mousedown=${() => hideQuoteBtn()}>
+                    ${state.knowledgePreview.loading ? html`
+                      <div class="knowledge-preview-loading">加载中...</div>
+                    ` : state.knowledgePreview.error ? html`
+                      <div class="knowledge-preview-error">
+                        <div>${state.knowledgePreview.error}</div>
+                      </div>
+                    ` : state.knowledgePreview.type === "text" ? html`
+                      <pre>${state.knowledgePreview.content}</pre>
+                    ` : state.knowledgePreview.type === "image" ? html`
+                      <img src=${state.knowledgePreview.url} alt=${state.knowledgePreview.name} />
+                    ` : state.knowledgePreview.type === "pdf" ? html`
+                      ${state.knowledgePreview.pdfTextMode ? html`
+                        <div class="markdown-body">${unsafeHTML(toSanitizedMarkdownHtml(state.knowledgePreview.extractedText || ""))}</div>
+                      ` : html`
+                        <iframe src=${state.knowledgePreview.url} style="width:80%;height:80%;margin:auto;display:block;min-height:500px;"></iframe>
+                      `}
+                    ` : state.knowledgePreview.type === "html" ? html`
+                      <div class="html-preview markdown-body">${unsafeHTML(state.knowledgePreview.content)}</div>
+                    ` : html`
+                      <div class="knowledge-preview-error">
+                        <div>该文件格式暂不支持预览</div>
+                      </div>
+                    `}
+                    ${state.knowledgeQuoteBtn ? html`
+                      <button class="knowledge-quote-float"
+                        style="left:${state.knowledgeQuoteBtn.x}px;top:${state.knowledgeQuoteBtn.y}px;"
+                        @mousedown=${(e: Event) => { e.preventDefault(); e.stopPropagation(); quoteSelectedText(); }}>
+                        引用选中
+                      </button>
+                    ` : ""}
+                  </div>
+                </div>
+              ` : html`
               ${!state.authorizedFolder ? html`
                 <div class="knowledge-empty">
                   <div style="margin-bottom: 12px; color: #9ca3af;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
@@ -904,12 +1173,13 @@ function renderApp() {
                 ` : sortedFiles().map(f => html`
                   <div class="knowledge-file-item">
                     <span class="knowledge-file-icon">${f.type === "image" ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : f.type === "doc" ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>` : html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`}</span>
-                    <span class="knowledge-file-name" title=${f.name}>${f.name}</span>
+                    <span class="knowledge-file-name clickable" title=${f.name} @click=${() => openKnowledgePreview(f)}>${f.name}</span>
                     <span class="knowledge-file-size">${formatFileSize(f.size)}</span>
                     <button class="knowledge-file-btn ref" @click=${() => addKnowledgeRef(f.name)} title="引用到对话">引用</button>
                     <button class="knowledge-file-btn del" @click=${() => deleteKnowledgeFileAction(f.name)} title="删除文件"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                   </div>
                 `)}
+              `}
               `}
             </div>
           </div>
@@ -1231,12 +1501,16 @@ function renderApp() {
         ${state.sidePanel === "settings" ? html`
           <div class="side-panel-view settings-view">
             <div class="side-panel-header">
-              <span class="panel-title">${state.settingsView === "model" ? html`
+              <span class="panel-title">${(state.settingsView as string) === "license" ? html`
+                <button class="settings-back-btn" @click=${() => { state.settingsView = "main"; renderApp(); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button> 授权管理
+              ` : state.settingsView === "model" ? html`
                 <button class="settings-back-btn" @click=${() => { state.settingsView = "main"; state.modelError = null; renderApp(); }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </button> 模型配置
               ` : html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> 设置`}</span>
-              <button class="side-panel-close" @click=${() => { state.sidePanel = null; state.settingsView = "main"; state.confirmingClear = false; state.modelError = null; renderApp(); }} title="关闭">✕</button>
+              <button class="side-panel-close" @click=${() => { state.sidePanel = null; state.settingsView = "main"; state.confirmingClear = false; state.modelError = null; state.licenseApplyResult = null; renderApp(); }} title="关闭">✕</button>
             </div>
             <div class="side-panel-body settings-fullscreen">
               ${state.settingsView === "model" ? html`
@@ -1347,8 +1621,89 @@ function renderApp() {
                 `}
               </div>
               ` : html`
+              ${(state.settingsView as string) === "license" ? html`
+              <!-- License Settings Sub-View -->
+              <div class="about-settings">
+                <div class="about-setting-group">
+                  <div class="about-setting-title">当前状态</div>
+                  <div class="license-status-card ${state.licenseStatus}">
+                    ${state.licenseStatus === "licensed" ? html`
+                      <div class="license-status-icon">✅</div>
+                      <div class="license-status-text">
+                        <strong>已授权</strong>
+                        <span>剩余 ${getLicenseDaysRemaining()} 天 · 到期 ${state.licenseExpiresAt ? new Date(state.licenseExpiresAt).toLocaleDateString("zh-CN") : ""}</span>
+                      </div>
+                    ` : state.licenseStatus === "trial" ? html`
+                      <div class="license-status-icon">⏳</div>
+                      <div class="license-status-text">
+                        <strong>试用中</strong>
+                        <span>剩余 ${getTrialDaysRemaining()} 天</span>
+                      </div>
+                    ` : html`
+                      <div class="license-status-icon">🔒</div>
+                      <div class="license-status-text">
+                        <strong>已过期</strong>
+                        <span>试用期已结束</span>
+                      </div>
+                    `}
+                  </div>
+                </div>
+                <div class="about-setting-group">
+                  <div class="about-setting-title">填写授权码</div>
+                  <div class="license-activate-row">
+                    <input type="text" class="license-code-input" placeholder="XXXX-XXXX-XXXX-XXXX"
+                      .value=${state.licenseActivateCode}
+                      @input=${(e: Event) => { state.licenseActivateCode = (e.target as HTMLInputElement).value; renderApp(); }}
+                      @keydown=${(e: KeyboardEvent) => { if (e.key === "Enter") activateLicense(); }} />
+                    <button class="license-activate-btn" @click=${activateLicense} .disabled=${state.licenseActivating}>
+                      ${state.licenseActivating ? "激活中..." : "激活"}
+                    </button>
+                  </div>
+                </div>
+                <div class="about-setting-group">
+                  <div class="about-setting-title">申请使用授权</div>
+                  <div class="license-apply-form">
+                    <input type="email" class="settings-input" placeholder="邮箱" .value=${state.licenseApplyForm.email}
+                      @input=${(e: Event) => { state.licenseApplyForm.email = (e.target as HTMLInputElement).value; }} />
+                    <input type="tel" class="settings-input" placeholder="手机号" .value=${state.licenseApplyForm.phone}
+                      @input=${(e: Event) => { state.licenseApplyForm.phone = (e.target as HTMLInputElement).value; }} />
+                    <input type="text" class="settings-input" placeholder="申请原因" .value=${state.licenseApplyForm.reason}
+                      @input=${(e: Event) => { state.licenseApplyForm.reason = (e.target as HTMLInputElement).value; }} />
+                    <select class="settings-input" .value=${state.licenseApplyForm.period}
+                      @change=${(e: Event) => { state.licenseApplyForm.period = (e.target as HTMLSelectElement).value; renderApp(); }}>
+                      <option value="30天">申请 30 天</option>
+                      <option value="90天">申请 90 天</option>
+                      <option value="180天">申请 180 天</option>
+                      <option value="365天">申请 365 天</option>
+                    </select>
+                    <button class="about-action-btn" @click=${submitLicenseApplication} .disabled=${state.licenseApplying}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                      <span>${state.licenseApplying ? "提交中..." : "提交申请"}</span>
+                    </button>
+                    ${state.licenseApplyResult === "success" ? html`<p style="color:var(--green-600);font-size:12px;margin-top:8px;">申请已提交，请等待管理员审核</p>` : ""}
+                    ${state.licenseApplyResult === "error" ? html`<p style="color:var(--danger);font-size:12px;margin-top:8px;">提交失败，请稍后重试</p>` : ""}
+                  </div>
+                </div>
+              </div>
+              ` : html`
               <!-- Settings Main View -->
               <div class="about-settings">
+                <div class="about-setting-group">
+                  <div class="about-setting-title">授权</div>
+                  <div class="about-setting-row">
+                    <button class="about-action-btn" @click=${() => { state.settingsView = "license" as any; state.licenseView = "status"; renderApp(); }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                      </svg>
+                      <span>授权管理</span>
+                      <span class="settings-model-tag" style="background: ${state.licenseStatus === "licensed" ? "var(--green-50, #f0fdf4)" : state.licenseStatus === "trial" ? "var(--amber-50, #fffbeb)" : "var(--red-50, #fef2f2)"}; color: ${state.licenseStatus === "licensed" ? "var(--green-600, #16a34a)" : state.licenseStatus === "trial" ? "var(--amber-600, #d97706)" : "var(--danger, #dc2626)"}">
+                        ${state.licenseStatus === "licensed" ? "已授权" : state.licenseStatus === "trial" ? `试用 ${getTrialDaysRemaining()}天` : "已过期"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
                 <div class="about-setting-group">
                   <div class="about-setting-title">模型</div>
                   <div class="about-setting-row">
@@ -1462,6 +1817,7 @@ function renderApp() {
                 </div>
               </div>
               `}
+            `}
             </div>
           </div>
         ` : ""}
@@ -1480,6 +1836,23 @@ function renderApp() {
                   <div class="about-title">Taxbot Evo</div>
                   <div class="about-subtitle">AI 税务助理 · v${TAXBOT_VERSION}</div>
                 </div>
+              </div>
+              <div class="about-update-section">
+                ${state.updateAvailable ? html`
+                  <div class="about-update-available">
+                    <div class="about-update-info">
+                      <span class="about-update-badge">New</span>
+                      <span>发现新版本 <strong>v${state.updateAvailable.version}</strong></span>
+                    </div>
+                    ${state.updateAvailable.changelog ? html`<div class="about-update-changelog">${state.updateAvailable.changelog}</div>` : ""}
+                    <button class="about-update-download" @click=${() => window.open(state.updateAvailable!.downloadUrl, "_blank")}>前往下载</button>
+                  </div>
+                ` : html`
+                  <button class="about-update-check ${state.updateChecking ? "checking" : ""}" @click=${checkForUpdate} .disabled=${state.updateChecking}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                    ${state.updateChecking ? "正在检查..." : "检查更新"}
+                  </button>
+                `}
               </div>
               <div class="about-desc">通过 Skill 和 Agent 实现财税能力的自进化</div>
               <div class="about-cards">
@@ -3026,6 +3399,9 @@ initPersistence();
 initConversations();
 setRenderer(renderApp);
 scheduleRender();
+
+// License check
+initLicenseCheck();
 
 // TaxStore — restore session & sync (non-blocking)
 initTaxStore().then(() => {

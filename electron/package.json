@@ -3,5 +3,10 @@
   "version": "1.0.0",
   "description": "Taxbot桌面应用",
   "main": "main.cjs",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "mammoth": "^1.11.0",
+    "xlsx": "^0.18.5"
+  }
 }

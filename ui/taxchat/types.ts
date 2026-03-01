@@ -138,6 +138,8 @@ export interface AppState {
   knowledgeRefs: Array<{ name: string }>;
   knowledgeDragOver: boolean;
   knowledgeLoading: boolean;
+  knowledgePreview: { name: string; type: string; content: string; url: string; loading: boolean; error: string | null; extractedText?: string; pdfTextMode?: boolean } | null;
+  knowledgeQuoteBtn: { visible: boolean; x: number; y: number; text: string } | null;
   builtinSkillsCollapsed: boolean;
   filesSortBy: "time" | "name";
   skillsSortBy: "time" | "name";
@@ -177,6 +179,8 @@ export interface AppState {
   mentionDropdownVisible: boolean;
   mentionFilter: string;
   mentionIndex: number;
+  recentMentionIds: string[];
+  lastSingleMentionAgent: { id: string; name: string } | null;
   replyingTo: ChatMessage | null;
   conversations: Conversation[];
   currentConversationId: string;
@@ -189,7 +193,13 @@ export interface AppState {
   collaborationTasks: Array<{
     agentId: string; agentName: string; agentEmoji: string;
     task: string; status: "pending" | "working" | "done" | "error";
+    result?: string;
   }> | null;
+  // Sequential collaboration queue — agents dispatched one-by-one
+  collabQueue: Array<{ sessionKey: string; agentId: string; agent: AgentEntry | null }> | null;
+  collabFinalMessage: string | null;
+  collabApiAttachments: any[] | null;
+  collabMainResponse: string | null;
   // Quick commands (Feature 19)
   commandPaletteVisible: boolean;
   commandFilter: string;
@@ -270,4 +280,18 @@ export interface AppState {
   // Global refresh
   refreshing: boolean;
   lastRefreshTime: number | null;
+  // Version update
+  updateAvailable: { version: string; changelog: string; downloadUrl: string } | null;
+  updateChecking: boolean;
+  // License / authorization
+  licenseStatus: "checking" | "trial" | "licensed" | "expired";
+  licenseExpiresAt: number | null;
+  trialStartedAt: number | null;
+  licenseCode: string | null;
+  licenseView: "status" | "activate" | "apply";
+  licenseActivateCode: string;
+  licenseActivating: boolean;
+  licenseApplyForm: { email: string; phone: string; reason: string; period: string };
+  licenseApplying: boolean;
+  licenseApplyResult: "success" | "error" | null;
 }

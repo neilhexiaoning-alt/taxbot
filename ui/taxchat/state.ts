@@ -92,6 +92,8 @@ export const state: AppState = {
   knowledgeRefs: [],
   knowledgeDragOver: false,
   knowledgeLoading: false,
+  knowledgePreview: null,
+  knowledgeQuoteBtn: null,
   builtinSkillsCollapsed: true,
   filesSortBy: "time" as const,
   skillsSortBy: "time" as const,
@@ -122,6 +124,8 @@ export const state: AppState = {
   mentionDropdownVisible: false,
   mentionFilter: "",
   mentionIndex: 0,
+  recentMentionIds: JSON.parse(localStorage.getItem("taxbot_recent_mentions") || "[]") as string[],
+  lastSingleMentionAgent: null as AppState["lastSingleMentionAgent"],
   replyingTo: null as ChatMessage | null,
   // Conversation management — initialized by conversations.ts
   conversations: [] as Conversation[],
@@ -133,6 +137,10 @@ export const state: AppState = {
   viewingAgentMemory: null as AppState["viewingAgentMemory"],
   confirmingMemoryClear: false,
   collaborationTasks: null as AppState["collaborationTasks"],
+  collabQueue: null as AppState["collabQueue"],
+  collabFinalMessage: null as string | null,
+  collabApiAttachments: null as any[] | null,
+  collabMainResponse: null as string | null,
   // Quick commands (Feature 19)
   commandPaletteVisible: false,
   commandFilter: "",
@@ -212,6 +220,20 @@ export const state: AppState = {
   // Global refresh
   refreshing: false,
   lastRefreshTime: null as number | null,
+  // Version update
+  updateAvailable: null as AppState["updateAvailable"],
+  updateChecking: false,
+  // License / authorization
+  licenseStatus: "checking" as AppState["licenseStatus"],
+  licenseExpiresAt: null as number | null,
+  trialStartedAt: null as number | null,
+  licenseCode: null as string | null,
+  licenseView: "status" as AppState["licenseView"],
+  licenseActivateCode: "",
+  licenseActivating: false,
+  licenseApplyForm: { email: "", phone: "", reason: "", period: "90天" },
+  licenseApplying: false,
+  licenseApplyResult: null as AppState["licenseApplyResult"],
 };
 
 // ─── State Helpers ──────────────────────────────────────────────
@@ -237,6 +259,14 @@ export function findRunForEvent(evtSessionKey: string): ActiveRun | null {
 }
 
 /**
+ * Check if a session key is an agent chat session (part of the current conversation).
+ * Agent chat sessions use keys like "agent:{id}:main" and share state.messages.
+ */
+export function isAgentChatSession(sessionKey: string): boolean {
+  return sessionKey.startsWith("agent:") && sessionKey.endsWith(":main");
+}
+
+/**
  * Get the messages array for a given session key.
  * Returns state.messages if it's the current conversation,
  * or the backgroundMessages entry if it's a background conversation.
@@ -244,6 +274,8 @@ export function findRunForEvent(evtSessionKey: string): ActiveRun | null {
 export function getMessagesForSession(sessionKey: string): ChatMessage[] {
   // Current conversation
   if (sessionKey === state.sessionKey) return state.messages;
+  // Agent chat sessions (agent:xxx:main) are part of the current conversation
+  if (isAgentChatSession(sessionKey)) return state.messages;
   // Background conversation — extract convId from "taxchat-{convId}"
   const convId = sessionKey.startsWith("taxchat-") ? sessionKey.slice(8) : sessionKey;
   if (state.backgroundMessages.has(convId)) {

@@ -987,6 +987,108 @@ ipcMain.handle('read-knowledge-file', async (_event, fileName) => {
   }
 });
 
+// ============ 知识库文件预览 ============
+
+ipcMain.handle('preview-knowledge-file', async (_event, { folderPath, fileName, fileType }) => {
+  try {
+    const filePath = path.join(folderPath, fileName);
+    const ext = path.extname(fileName).toLowerCase();
+
+    if (!fs.existsSync(filePath)) {
+      return { ok: false, error: '文件不存在' };
+    }
+
+    if (fileType === 'text') {
+      const MAX_PREVIEW = 500 * 1024; // 500KB limit for preview
+      const stat = fs.statSync(filePath);
+      if (stat.size > MAX_PREVIEW) {
+        const content = fs.readFileSync(filePath, 'utf-8').slice(0, MAX_PREVIEW);
+        return { ok: true, type: 'text', content: content + '\n\n... (文件过大，仅显示前500KB)' };
+      }
+      return { ok: true, type: 'text', content: fs.readFileSync(filePath, 'utf-8') };
+    }
+
+    if (fileType === 'image') {
+      const url = 'file:///' + filePath.replace(/\\/g, '/');
+      return { ok: true, type: 'image', url };
+    }
+
+    if (ext === '.pdf') {
+      const url = 'file:///' + filePath.replace(/\\/g, '/');
+      const result = { ok: true, type: 'pdf', url, extractedText: '' };
+      // Extract text from PDF using pdfjs-dist
+      try {
+        const pdfjs = await loadPdfJs();
+        const buffer = fs.readFileSync(filePath);
+        const pdf = await pdfjs.getDocument({
+          data: new Uint8Array(buffer),
+          disableWorker: true,
+        }).promise;
+        const maxPages = Math.min(pdf.numPages, 30);
+        const textParts = [];
+        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map(item => ('str' in item ? String(item.str) : ''))
+            .filter(Boolean)
+            .join(' ');
+          if (pageText) {
+            textParts.push(`## 第${pageNum}页\n\n${pageText}`);
+          }
+        }
+        result.extractedText = textParts.join('\n\n');
+      } catch (pdfErr) {
+        console.warn('PDF text extraction failed:', pdfErr.message);
+      }
+      return result;
+    }
+
+    if (ext === '.docx') {
+      const mammoth = require('mammoth');
+      // Use convertToHtml for structured content, return as markdown-html
+      const htmlResult = await mammoth.convertToHtml({ path: filePath });
+      // Also extract raw text for potential quoting
+      return { ok: true, type: 'html', content: htmlResult.value };
+    }
+
+    if (ext === '.xlsx' || ext === '.xls') {
+      const XLSX = require('xlsx');
+      const wb = XLSX.readFile(filePath);
+      let html = '';
+      for (const name of wb.SheetNames) {
+        html += '<h3>' + name + '</h3>' + XLSX.utils.sheet_to_html(wb.Sheets[name]);
+      }
+      return { ok: true, type: 'html', content: html };
+    }
+
+    if (ext === '.pptx') {
+      const JSZip = require('jszip');
+      const data = fs.readFileSync(filePath);
+      const zip = await JSZip.loadAsync(data);
+      const slides = [];
+      const slideFiles = Object.keys(zip.files)
+        .filter(n => /ppt\/slides\/slide\d+\.xml$/.test(n))
+        .sort((a, b) => {
+          const na = parseInt(a.match(/slide(\d+)/)[1]);
+          const nb = parseInt(b.match(/slide(\d+)/)[1]);
+          return na - nb;
+        });
+      for (const name of slideFiles) {
+        const xml = await zip.files[name].async('string');
+        const texts = [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map(m => m[1]);
+        if (texts.length) slides.push(texts.join(' '));
+      }
+      const content = slides.map((s, i) => '<h3>幻灯片 ' + (i + 1) + '</h3><p>' + s + '</p>').join('');
+      return { ok: true, type: 'html', content: content || '<p>未能提取到幻灯片内容</p>' };
+    }
+
+    return { ok: false, error: '该文件格式暂不支持预览' };
+  } catch (err) {
+    return { ok: false, error: '预览失败: ' + err.message };
+  }
+});
+
 // ============ 授权文件夹守护进程 (File Watcher) ============
 
 let folderWatcher = null;

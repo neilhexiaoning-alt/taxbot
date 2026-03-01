@@ -95,6 +95,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToKnowledgeFolder: (fileData) => ipcRenderer.invoke('copy-to-knowledge-folder', fileData),
   deleteKnowledgeFile: (folderPath, fileName) => ipcRenderer.invoke('delete-knowledge-file', { folderPath, fileName }),
   readKnowledgeFile: (fileName) => ipcRenderer.invoke('read-knowledge-file', fileName),
+  previewKnowledgeFile: (folderPath, fileName, fileType) => ipcRenderer.invoke('preview-knowledge-file', { folderPath, fileName, fileType }),
 
   // 自定义 Skill 文件管理
   saveCustomSkill: (skill) => ipcRenderer.invoke('save-custom-skill', skill),
