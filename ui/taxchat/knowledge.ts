@@ -232,7 +232,7 @@ export async function saveMessageToKnowledge(text: string) {
     showToast("请先在知识库中选择文件夹");
     return;
   }
-  const fileName = `Taxbot_${generateTimestamp()}.doc`;
+  const fileName = `慧助理_${generateTimestamp()}.doc`;
   const wordDoc = generateWordDoc(text);
   const base64 = btoa(unescape(encodeURIComponent(wordDoc)));
   try {

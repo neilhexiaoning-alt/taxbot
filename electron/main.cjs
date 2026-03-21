@@ -18,7 +18,7 @@ function taxLog(msg) {
 
 // App configuration
 const APP_CONFIG = {
-  name: 'Taxbot',
+  name: '慧助理',
   width: 1200,
   height: 800,
   gatewayPort: 18789,
@@ -35,8 +35,48 @@ let gatewayProbeTimer = null;
 let gatewayRestartCount = 0;
 let gatewayLastStartTime = 0;
 let gatewaySuppressAutoRestart = false; // set true during intentional stop/restart
+let gatewayStartupTimer = null; // startup timeout handle
 const MAX_RESTARTS = 3;
 const RESTART_WINDOW_MS = 60000; // Reset counter after 60s of stable running
+const STARTUP_TIMEOUT_MS = 90000; // Max time to wait for gateway to start listening
+
+/**
+ * Ensure openclaw.json exists with required defaults.
+ * Creates a minimal config if missing; patches existing config if needed.
+ */
+function ensureDefaultConfig() {
+  const configDir = path.join(process.env.USERPROFILE || process.env.HOME || '', '.openclaw');
+  const configPath = path.join(configDir, 'openclaw.json');
+  try { if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true }); } catch (_) {}
+
+  const defaults = {
+    gateway: { mode: "local", port: 18789, bind: "loopback" },
+  };
+
+  if (!fs.existsSync(configPath)) {
+    // First install — create minimal config
+    fs.writeFileSync(configPath, JSON.stringify(defaults, null, 2), 'utf-8');
+    console.log('[Config] Created default openclaw.json');
+    return;
+  }
+
+  // Existing config — ensure gateway.mode is set
+  try {
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(raw);
+    let changed = false;
+
+    if (!config.gateway) { config.gateway = defaults.gateway; changed = true; }
+    if (!config.gateway.mode) { config.gateway.mode = "local"; changed = true; }
+
+    if (changed) {
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+      console.log('[Config] Patched openclaw.json with required defaults');
+    }
+  } catch (err) {
+    console.warn('[Config] Failed to patch config:', err.message);
+  }
+}
 
 /**
  * Read gateway token from openclaw.json
@@ -364,6 +404,20 @@ async function startGateway() {
   setGatewayStatus("starting");
   gatewayLastStartTime = Date.now();
 
+  // (B) Clean up stale lock file before starting to prevent hang
+  try {
+    const crypto = require('crypto');
+    const os = require('os');
+    const stateDir = path.join(process.env.USERPROFILE || process.env.HOME || '', '.openclaw');
+    const configPath = path.join(stateDir, 'openclaw.json');
+    const hash = crypto.createHash('sha1').update(configPath).digest('hex').slice(0, 8);
+    const lockPath = path.join(os.tmpdir(), 'openclaw', `gateway.${hash}.lock`);
+    if (fs.existsSync(lockPath)) {
+      fs.unlinkSync(lockPath);
+      console.log('[Gateway] Cleaned up stale lock file before start');
+    }
+  } catch (_) { /* ignore */ }
+
   // Check for port conflicts before spawning
   const freePort = await findFreePort(APP_CONFIG.gatewayPort);
   if (freePort !== APP_CONFIG.gatewayPort) {
@@ -389,7 +443,7 @@ async function startGateway() {
   if (app.isPackaged || !hasSrcDir) {
     // Packaged or distribution mode: skip run-node.mjs (no TypeScript build needed)
     const entryPath = path.join(projectRoot, 'openclaw.mjs');
-    scriptArgs = [entryPath, 'gateway', '--allow-unconfigured'];
+    scriptArgs = [entryPath, 'gateway', '--allow-unconfigured', '--port', String(APP_CONFIG.gatewayPort)];
     const mode = app.isPackaged ? 'Packaged' : 'Distribution';
     const info = `[${new Date().toISOString()}] ${mode} mode\n  execPath: ${process.execPath}\n  projectRoot: ${projectRoot}\n  entryPath: ${entryPath}\n  entryExists: ${fs.existsSync(entryPath)}\n`;
     try { fs.writeFileSync(logFile, info); } catch (_) {}
@@ -397,7 +451,7 @@ async function startGateway() {
   } else {
     // Dev mode with source: use run-node.mjs for auto-build
     const scriptPath = path.join(projectRoot, 'scripts', 'run-node.mjs');
-    scriptArgs = [scriptPath, 'gateway', '--allow-unconfigured'];
+    scriptArgs = [scriptPath, 'gateway', '--allow-unconfigured', '--port', String(APP_CONFIG.gatewayPort)];
     console.log('[Gateway] Dev mode, running via run-node.mjs');
   }
 
@@ -416,10 +470,35 @@ async function startGateway() {
     windowsHide: true,
   });
 
+  // (C) Startup timeout — if gateway doesn't become ready within limit, kill and mark error
+  if (gatewayStartupTimer) clearTimeout(gatewayStartupTimer);
+  gatewayStartupTimer = setTimeout(() => {
+    if (gatewayStatus === "starting" && gatewayProcess) {
+      console.error(`[Gateway] Startup timeout after ${STARTUP_TIMEOUT_MS / 1000}s — killing process`);
+      try { fs.appendFileSync(logFile, `[timeout] Gateway did not become ready within ${STARTUP_TIMEOUT_MS / 1000}s\n`); } catch (_) {}
+      gatewaySuppressAutoRestart = true;
+      const pid = gatewayProcess.pid;
+      gatewayProcess = null;
+      if (process.platform === 'win32' && pid) {
+        try { execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore', windowsHide: true, timeout: 5000 }); } catch (_) {}
+      }
+      setGatewayStatus("error");
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('gateway-error', '助理启动超时，请检查配置后重试');
+      }
+    }
+  }, STARTUP_TIMEOUT_MS);
+
   gatewayProcess.stdout.on('data', (data) => {
     const msg = data.toString().trim();
     console.log(`[Gateway] ${msg}`);
     try { fs.appendFileSync(logFile, `[stdout] ${msg}\n`); } catch (_) {}
+    // (D) Detect gateway ready signal from stdout
+    if (msg.includes('listening on')) {
+      if (gatewayStartupTimer) { clearTimeout(gatewayStartupTimer); gatewayStartupTimer = null; }
+      setGatewayStatus("connected");
+      console.log('[Gateway] Ready signal detected from stdout');
+    }
   });
 
   gatewayProcess.stderr.on('data', (data) => {
@@ -442,6 +521,7 @@ async function startGateway() {
   gatewayProcess.on('exit', (code, signal) => {
     console.log(`[Gateway] Exited (code=${code}, signal=${signal})`);
     try { fs.appendFileSync(logFile, `[exit] code=${code} signal=${signal}\n`); } catch (_) {}
+    if (gatewayStartupTimer) { clearTimeout(gatewayStartupTimer); gatewayStartupTimer = null; }
     gatewayProcess = null;
     lastGatewayExitCode = code;
     if (code && code !== 0) {
@@ -565,6 +645,7 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     app.setName(APP_CONFIG.name);
+    ensureDefaultConfig();
     createMainWindow();
     createTray();
     startGateway();
@@ -1666,7 +1747,7 @@ metadata:
 
 ## 专业知识参考
 
-如果用户消息中包含【Taxbot专业分析参考】部分，这是来自专业税务知识库的参考意见。你应该：
+如果用户消息中包含【慧助理专业分析参考】部分，这是来自专业税务知识库的参考意见。你应该：
 - 充分参考和引用该专业意见，将其作为分析的重要依据
 - 结合你自己的分析和文件内容，形成更完整的建议
 - 如果专业参考与你的分析存在差异，说明两种观点并给出你的判断
@@ -2349,7 +2430,7 @@ ipcMain.handle('extract-document-text', async (_event, { base64Data, mimeType, f
   }
 });
 
-// ============ Taxbot API ============
+// ============ 慧助理 API ============
 
 const TAXYES_API_URL = 'https://ai.taxyes.com/api/open/v1/chat';
 const TAXYES_TIMEOUT = 180000; // 180 seconds — API needs time for regulation search + generation
@@ -2422,7 +2503,7 @@ ipcMain.handle('taxyes-chat', async (_event, { content, messageList }) => {
           if (chunk.finishReason === 'error') {
             clearTimeout(timer);
             reader.cancel();
-            const errMsg = finalSteps.find(s => s.errorTip)?.step || 'Taxbot返回错误';
+            const errMsg = finalSteps.find(s => s.errorTip)?.step || '慧助理返回错误';
             return { ok: false, error: errMsg };
           }
         } catch (_) { /* not valid JSON, skip */ }

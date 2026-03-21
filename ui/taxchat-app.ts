@@ -94,6 +94,7 @@ import {
   loadMyListings, pollPendingTasks, loadCompletedTasks, pollConsultTasks,
 } from "./taxchat/rental";
 import { tsGetMe, tsCheckTaxbotUpdate, tsActivateLicense, tsVerifyLicense, tsApplyLicense } from "./taxchat/taxstore-api";
+import { DASHSCOPE_MODELS, saveSetupConfig, dismissSetupWizard, skipSetupWizard } from "./taxchat/setup-wizard";
 
 // ─── Avatar URL Helper ──────────────────────────────────────
 /** Resolve agent avatar URL — handles data URLs, relative paths, and full URLs */
@@ -240,7 +241,7 @@ function initLicenseCheck() {
     localStorage.setItem("taxbot_trial_start", String(now));
     state.trialStartedAt = now;
     state.licenseStatus = "trial";
-    showToast("欢迎使用 Taxbot！您有 7 天免费试用期");
+    showToast("欢迎使用慧助理！您有 7 天免费试用期");
   }
   scheduleRender();
 
@@ -329,6 +330,97 @@ function handleQuickSkill(skillName: string, prompt: string, displayLabel: strin
   _handleQuickSkill(skillName, prompt, displayLabel, noFilePicker, handleSend, handleFiles);
 }
 
+// ─── Setup Wizard ────────────────────────────────────────────
+function renderSetupWizard() {
+  const step = state.setupStep;
+
+  // Step 1 — Welcome
+  if (step === 1) {
+    return html`
+      <div class="setup-wizard-overlay">
+        <div class="setup-wizard-card">
+          <div class="setup-wizard-body">
+            <div class="setup-wizard-logo">
+              <img src="./assets/taxchat-logo.png" alt="慧助理" />
+            </div>
+            <h2 class="setup-wizard-title">欢迎使用慧助理</h2>
+            <p class="setup-wizard-desc">智能税务助手，为您提供专业的税务咨询服务。<br/>请先完成简单的模型配置，仅需一步即可开始使用。</p>
+            <button class="setup-btn-primary" @click=${() => { state.setupStep = 2; renderApp(); }}>开始配置</button>
+            <button class="setup-skip-link" @click=${skipSetupWizard}>跳过，稍后配置</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Step 2 — Config
+  if (step === 2) {
+    return html`
+      <div class="setup-wizard-overlay">
+        <div class="setup-wizard-card">
+          <div class="setup-wizard-body" style="text-align: left;">
+            <h2 class="setup-wizard-title" style="text-align: center;">配置 AI 模型</h2>
+            <p class="setup-wizard-desc" style="text-align: center;">输入您的通义千问 API Key 并选择模型</p>
+            <div class="setup-form">
+              ${state.setupError ? html`<div class="setup-error">${state.setupError}</div>` : ""}
+              <div class="setup-field">
+                <label class="setup-field-label">API Key</label>
+                <div class="setup-input-wrap">
+                  <input class="setup-input"
+                    type=${state.apiKeyVisible ? "text" : "password"}
+                    .value=${state.setupApiKey}
+                    @input=${(e: Event) => { state.setupApiKey = (e.target as HTMLInputElement).value; }}
+                    placeholder="sk-..." />
+                  <button class="setup-key-toggle" type="button" @click=${() => { state.apiKeyVisible = !state.apiKeyVisible; renderApp(); }} title=${state.apiKeyVisible ? "隐藏" : "显示"}>
+                    ${state.apiKeyVisible
+                      ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+                      : html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`}
+                  </button>
+                </div>
+                <div class="setup-field-hint">请前往 <a href="https://dashscope.console.aliyun.com/apiKey" target="_blank">DashScope 控制台</a> 获取 API Key</div>
+              </div>
+              <div class="setup-field">
+                <label class="setup-field-label">选择模型</label>
+                <div class="setup-model-list">
+                  ${DASHSCOPE_MODELS.map(m => html`
+                    <div class="setup-model-option ${state.setupModelId === m.id ? "selected" : ""}" @click=${() => { state.setupModelId = m.id; renderApp(); }}>
+                      <div class="setup-model-radio"><div class="setup-model-radio-dot"></div></div>
+                      <div class="setup-model-info">
+                        <div class="setup-model-name">${m.name}</div>
+                        <div class="setup-model-desc">${m.desc}</div>
+                      </div>
+                    </div>
+                  `)}
+                </div>
+              </div>
+              <button class="setup-btn-primary" ?disabled=${state.setupSaving} @click=${saveSetupConfig}>
+                ${state.setupSaving ? "保存中..." : "保存并开始使用"}
+              </button>
+              <button class="setup-skip-link" @click=${skipSetupWizard}>跳过，稍后在设置中配置</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Step 3 — Done
+  return html`
+    <div class="setup-wizard-overlay">
+      <div class="setup-wizard-card">
+        <div class="setup-wizard-body">
+          <div class="setup-success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 class="setup-wizard-title">配置完成！</h2>
+          <p class="setup-wizard-desc">模型已配置成功，服务正在重启中。<br/>您现在可以开始使用慧助理了。</p>
+          <button class="setup-btn-primary" @click=${dismissSetupWizard}>进入慧助理</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ─── Render Functions (extracted from original) ───────────────
 
 function renderQuickStart() {
@@ -347,8 +439,8 @@ function renderQuickStart() {
 
         <!-- Hero -->
         <div class="qs-hero">
-          <img src="./assets/taxchat-logo.png" alt="Taxbot" style="width:72px;height:72px;" />
-          <h1>欢迎使用Taxbot</h1>
+          <img src="./assets/taxchat-logo.png" alt="慧助理" style="width:72px;height:72px;" />
+          <h1>欢迎使用慧助理</h1>
           <p>您的 AI 税务助手，帮助您分析税务风险、审核票据合同、整理报销单、管理知识库。</p>
         </div>
 
@@ -482,7 +574,7 @@ function renderQuickStart() {
 
         <!-- Footer -->
         <div class="qs-footer">
-          <button class="qs-btn-start" @click=${dismissQuickStart}>开始使用Taxbot</button>
+          <button class="qs-btn-start" @click=${dismissQuickStart}>开始使用慧助理</button>
           <div class="qs-footer-hint">可随时在左侧"关于"页面重新查看此指南</div>
         </div>
 
@@ -496,10 +588,10 @@ function renderMessages() {
     return html`
       <div class="empty-state">
         <div class="empty-state__icon">
-          <img src="./assets/taxchat-logo.png" alt="Taxbot" style="width: 120px; height: 120px;" />
+          <img src="./assets/taxchat-logo.png" alt="慧助理" style="width: 120px; height: 120px;" />
         </div>
         <div class="empty-state__text">
-          <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">欢迎来到Taxbot</div>
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">欢迎来到慧助理</div>
           <div>有任何税务问题？请在下方输入并提问</div>
         </div>
       </div>
@@ -526,7 +618,7 @@ function renderMessages() {
       if (!replyToId) return "";
       const quoted = state.messages.find(m => m.id === replyToId);
       if (!quoted) return "";
-      const sender = quoted.type === "user" ? "我" : ((quoted as AssistantMessage).agentName || "Taxbot");
+      const sender = quoted.type === "user" ? "我" : ((quoted as AssistantMessage).agentName || "慧助理");
       const preview = quoted.text.length > 80 ? quoted.text.slice(0, 80) + "..." : quoted.text;
       return html`<div class="message-quote-card" @click=${() => {
         const el = document.querySelector(`[data-msg-id="${replyToId}"]`);
@@ -583,7 +675,7 @@ function renderMessages() {
               ? html`<img src="${aMsg.agentAvatarUrl}" class="agent-avatar-img" alt="${aMsg.agentName || ""}" />`
               : aMsg.agentEmoji
               ? html`<span class="agent-emoji-avatar">${aMsg.agentEmoji}</span>`
-              : html`<img src="./assets/taxchat-logo.png" alt="Taxbot" />`}</div>
+              : html`<img src="./assets/taxchat-logo.png" alt="慧助理" />`}</div>
             <div class="message-bubble assistant markdown-body ${isFav ? "favorited" : ""}">${unsafeHTML(toSanitizedMarkdownHtml(autoLinkText(sanitizeDisplayText(msg.text))))}</div>
           </div>
           <div class="message-actions">
@@ -650,7 +742,7 @@ function renderMessages() {
             ? html`<img src="${tgtAgent.avatarUrl}" class="agent-avatar-img" alt="${tgtAgent.name}" />`
             : tgtAgent?.emoji
             ? html`<span class="agent-emoji-avatar">${tgtAgent.emoji}</span>`
-            : html`<img src="./assets/taxchat-logo.png" alt="Taxbot" />`}</div>
+            : html`<img src="./assets/taxchat-logo.png" alt="慧助理" />`}</div>
           <div class="message-bubble assistant">
             <div class="thinking-indicator">
               ${run.thinkingLabel ? html`<span class="thinking-label">${run.thinkingLabel}</span>` : ""}
@@ -713,10 +805,10 @@ function renderApp() {
       <header class="taxchat-header">
         <div class="taxchat-header__title">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="taxchat-header__logo" @click=${() => { state.sidePanel = state.sidePanel === "about" ? null : "about"; renderApp(); }} style="cursor: pointer;" title="关于Taxbot">
-              <img src="./assets/taxchat-logo.png" alt="Taxbot" />
+            <div class="taxchat-header__logo" @click=${() => { state.sidePanel = state.sidePanel === "about" ? null : "about"; renderApp(); }} style="cursor: pointer;" title="关于慧助理">
+              <img src="./assets/taxchat-logo.png" alt="慧助理" />
             </div>
-            <h1>Taxbot</h1>
+            <h1>慧助理</h1>
             <div class="taxchat-header__status" @click=${(e: Event) => { e.stopPropagation(); state.showStatusMenu = !state.showStatusMenu; renderApp(); }}>
               <span class="status-dot ${statusClass}"></span> ${statusText} <span class="status-arrow">▾</span>
               ${state.showStatusMenu ? html`
@@ -918,8 +1010,8 @@ function renderApp() {
             <button class="sidebar-item ${state.sidePanel === "about" ? "active" : ""}" @click=${() => { state.sidePanel = state.sidePanel === "about" ? null : "about"; renderApp(); }} title="关于">
               <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><span class="sidebar-label">关于</span>
             </button>
-            <button class="sidebar-item" @click=${() => { window.open("https://taxbot.cc", "_blank"); }} title="Taxbot">
-              <span class="sidebar-icon"><img src="./assets/taxchat-logo.png" alt="Taxbot" style="width:18px;height:18px;border-radius:4px;object-fit:contain;" /></span><span class="sidebar-label">Taxbot</span>
+            <button class="sidebar-item" @click=${() => { window.open("https://taxbot.cc", "_blank"); }} title="慧助理">
+              <span class="sidebar-icon"><img src="./assets/taxchat-logo.png" alt="慧助理" style="width:18px;height:18px;border-radius:4px;object-fit:contain;" /></span><span class="sidebar-label">慧助理</span>
             </button>
             <button class="sidebar-collapse-btn" @click=${() => { state.sidebarCollapsed = !state.sidebarCollapsed; localStorage.setItem("taxbot_sidebar_collapsed", String(state.sidebarCollapsed)); renderApp(); }} title=${state.sidebarCollapsed ? "展开侧栏" : "收起侧栏"}>
               ${state.sidebarCollapsed ? html`<span class="sidebar-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>` : html`<span class="sidebar-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>`}
@@ -1366,6 +1458,22 @@ function renderApp() {
                   ${state.rentalPendingTasks.length > 0 ? html`<span class="rental-tab-badge">${state.rentalPendingTasks.length}</span>` : ""}
                 </button>
               </div>
+
+              ${!state.taxstoreConnected ? html`
+              <div class="ts-login" style="margin:8px 0 4px;padding:10px 12px;">
+                <div class="ts-login-title" style="font-size:13px;">登录 TaxStore 解锁出租功能</div>
+                <input type="email" placeholder="邮箱" .value=${state.taxstoreLoginEmail}
+                  @input=${(e: Event) => { state.taxstoreLoginEmail = (e.target as HTMLInputElement).value; }} />
+                <input type="password" placeholder="密码" .value=${state.taxstoreLoginPassword}
+                  @input=${(e: Event) => { state.taxstoreLoginPassword = (e.target as HTMLInputElement).value; }}
+                  @keydown=${(e: KeyboardEvent) => { if (e.key === "Enter") loginTaxStore(state.taxstoreLoginEmail, state.taxstoreLoginPassword); }} />
+                ${state.taxstoreError ? html`<div class="ts-login-error">${state.taxstoreError}</div>` : ""}
+                <button class="ts-login-btn" ?disabled=${state.taxstoreLoading}
+                  @click=${() => loginTaxStore(state.taxstoreLoginEmail, state.taxstoreLoginPassword)}>
+                  ${state.taxstoreLoading ? "连接中..." : "登录"}
+                </button>
+              </div>
+              ` : ""}
 
               ${state.rentalActiveTab === "agents" ? html`
               <!-- 智能体列表 tab -->
@@ -1830,10 +1938,10 @@ function renderApp() {
             <div class="side-panel-body about-fullscreen">
               <div class="about-hero">
                 <div class="about-logo">
-                  <img src="./assets/taxchat-logo.png" alt="Taxbot" />
+                  <img src="./assets/taxchat-logo.png" alt="慧助理" />
                 </div>
                 <div class="about-hero-text">
-                  <div class="about-title">Taxbot Evo</div>
+                  <div class="about-title">慧助理</div>
                   <div class="about-subtitle">AI 税务助理 · v${TAXBOT_VERSION}</div>
                 </div>
               </div>
@@ -2620,7 +2728,7 @@ function renderApp() {
           ${state.replyingTo ? html`
             <div class="reply-bar">
               <div class="reply-bar__content">
-                <div class="reply-bar__label">回复 ${state.replyingTo.type === "user" ? "我" : ((state.replyingTo as AssistantMessage).agentName || "Taxbot")}</div>
+                <div class="reply-bar__label">回复 ${state.replyingTo.type === "user" ? "我" : ((state.replyingTo as AssistantMessage).agentName || "慧助理")}</div>
                 <div class="reply-bar__text">${state.replyingTo.text.length > 60 ? state.replyingTo.text.slice(0, 60) + "..." : state.replyingTo.text}</div>
               </div>
               <button class="reply-bar__close" @click=${() => { state.replyingTo = null; renderApp(); }}>✕</button>
@@ -2768,6 +2876,7 @@ function renderApp() {
 
 
       ${state.showQuickStart ? renderQuickStart() : ""}
+      ${state.setupWizardVisible ? renderSetupWizard() : ""}
 
       ${state.editingSkill ? html`
         <div class="skill-editor-overlay" @click=${() => { state.editingSkill = null; renderApp(); }}>
@@ -2925,7 +3034,7 @@ function renderApp() {
                 ${state.rentalPublishAgent.avatarUrl ? html`<img src="${state.rentalPublishAgent.avatarUrl}" />` : state.rentalPublishAgent.emoji}
               </div>
               <div class="rental-publish-agent-info">
-                <div class="rental-publish-agent-name">${state.rentalPublishAgent.isDefault ? `Taxbot Agent by ${state.taxstoreUser?.name || ""}` : state.rentalPublishAgent.name}</div>
+                <div class="rental-publish-agent-name">${state.rentalPublishAgent.isDefault ? `慧助理 by ${state.taxstoreUser?.name || ""}` : state.rentalPublishAgent.name}</div>
                 <div class="rental-publish-agent-desc">${state.rentalPublishAgent.description}</div>
               </div>
             </div>

@@ -441,3 +441,62 @@ export async function tsRecordInstall(
     console.warn("[TaxStore] Failed to record installation:", res.status);
   }
 }
+
+// ─── Taxbot Version Check ────────────────────────────────────
+export interface TaxbotLatestInfo {
+  version: string | null;
+  changelog?: string;
+  platform?: string;
+  downloadUrl?: string;
+}
+
+export async function tsCheckTaxbotUpdate(): Promise<TaxbotLatestInfo | null> {
+  try {
+    const res = await fetch(`${TAXSTORE_BASE}/taxbot/latest`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ─── License / Authorization ─────────────────────────────────
+
+export async function tsActivateLicense(code: string, deviceId: string): Promise<{ ok: boolean; expiresAt?: string; duration?: number; error?: string }> {
+  try {
+    const res = await fetch(`${TAXSTORE_BASE}/license/activate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, deviceId }),
+    });
+    return await res.json();
+  } catch {
+    return { ok: false, error: "网络连接失败" };
+  }
+}
+
+export async function tsVerifyLicense(deviceId: string): Promise<{ licensed: boolean; expiresAt?: string; expired?: boolean }> {
+  try {
+    const res = await fetch(`${TAXSTORE_BASE}/license/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId }),
+    });
+    return await res.json();
+  } catch {
+    return { licensed: false };
+  }
+}
+
+export async function tsApplyLicense(deviceId: string, form: { email: string; phone: string; reason: string; period: string }): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${TAXSTORE_BASE}/license/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId, ...form }),
+    });
+    return await res.json();
+  } catch {
+    return { error: "网络连接失败" };
+  }
+}

@@ -107,7 +107,7 @@ export async function publishAgent() {
 
   try {
     const publishName = agent.isDefault
-      ? `Taxbot Agent by ${state.taxstoreUser?.name || "Unknown"}`
+      ? `慧助理 by ${state.taxstoreUser?.name || "Unknown"}`
       : agent.name;
     const listing = await tsPublishAgent(state.taxstoreToken, {
       name: publishName,
@@ -193,28 +193,42 @@ export async function pollPendingTasks() {
     // Non-critical — silent fail
   }
 
-  // Send heartbeat for all active listings
-  try {
-    const activeIds = state.rentalMyListings
-      .filter(l => l.status === "active")
-      .map(l => l.id);
-    if (activeIds.length > 0 && state.taxstoreToken) {
-      tsHeartbeat(state.taxstoreToken, activeIds);
-    }
-  } catch { /* silent */ }
-
   // Auto-complete tasks that have been pending for > 2 hours
   checkAutoCompleteTasks();
 }
 
+/** Send heartbeat independently — not tied to task polling success */
+async function sendHeartbeat() {
+  if (!state.taxstoreToken || !state.taxstoreConnected) return;
+  try {
+    const activeIds = state.rentalMyListings
+      .filter(l => l.status === "active")
+      .map(l => l.id);
+    if (activeIds.length > 0) {
+      await tsHeartbeat(state.taxstoreToken, activeIds);
+    }
+  } catch (err) {
+    console.warn("[rental] heartbeat failed:", err);
+  }
+}
+
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
 export function startTaskPolling() {
   if (state.rentalPollingTimer) return;
-  // Poll immediately then every 60s
+  // Poll tasks every 60s
   pollPendingTasks();
   state.rentalPollingTimer = setInterval(pollPendingTasks, 60_000);
+  // Heartbeat every 30s (separate from task polling)
+  sendHeartbeat();
+  heartbeatTimer = setInterval(sendHeartbeat, 30_000);
 }
 
 export function stopTaskPolling() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
   if (state.rentalPollingTimer) {
     clearInterval(state.rentalPollingTimer);
     state.rentalPollingTimer = null;
@@ -641,8 +655,8 @@ export async function processTaskWithAgent() {
   const signal = controller.signal;
 
   const POLL_INTERVAL = 1500;
-  const STALE_TIMEOUT = 10_000;
-  const MAX_TOTAL_TIME = 120_000;
+  const STALE_TIMEOUT = 20_000;  // 20s — reasoning models may pause longer between chunks
+  const MAX_TOTAL_TIME = 180_000; // 3 minutes
   const startTime = Date.now();
   let lastChangeTime = Date.now();
   let prevText = "";
@@ -757,8 +771,8 @@ export async function reviseTaskWithInstruction() {
   const signal = controller.signal;
 
   const POLL_INTERVAL = 1500;
-  const STALE_TIMEOUT = 10_000;
-  const MAX_TOTAL_TIME = 120_000;
+  const STALE_TIMEOUT = 20_000;
+  const MAX_TOTAL_TIME = 180_000;
   const startTime = Date.now();
   let lastChangeTime = Date.now();
   let prevText = "";
@@ -965,6 +979,15 @@ async function autoCompleteTask(task: AgentTask) {
       if (Date.now() - startTime < MAX_TOTAL_TIME) {
         setTimeout(poll, POLL_INTERVAL);
       } else {
+        // Timeout in catch — still submit fallback so task doesn't stay pending forever
+        const finalText = prevText || "非常抱歉，智能体处理超时。请您重新提交任务或联系智能体主人。";
+        try {
+          await tsCompleteTask(state.taxstoreToken!, task.id, finalText);
+          state.rentalPendingTasks = state.rentalPendingTasks.filter(t => t.id !== task.id);
+          addNotification(`任务「${task.title}」已自动完成（超时）`, "⚠️");
+          loadCompletedTasks();
+          scheduleRender();
+        } catch { /* silent */ }
         autoCompletingTasks.delete(task.id);
       }
     }

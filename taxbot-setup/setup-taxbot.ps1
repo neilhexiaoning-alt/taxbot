@@ -283,6 +283,10 @@ function Run-Process($exe, $arguments, $workDir) {
 
 # ============ Installation logic ============
 function Do-Install {
+  # Inside Do-Install, use Continue so non-terminating errors don't crash ps2exe.
+  # The try/catch below handles real failures explicitly.
+  $ErrorActionPreference = 'Continue'
+
   # Validate API key
   $selectedModel = $modelCombo.SelectedIndex  # 0=MiniMax, 1=Qwen
   $keyName = if ($selectedModel -eq 0) { "MiniMax API Key" } else { "DashScope API Key" }
@@ -642,27 +646,32 @@ Read-Host "Press Enter to close"
     $taxbotExe = Join-Path $script:repoRoot 'electron\TaxBot.exe'
     $scIconPath = Join-Path (Join-Path (Join-Path $script:repoRoot 'ui') 'assets') 'icon.ico'
 
-    $wsh = New-Object -ComObject WScript.Shell
-    $shortcut = $wsh.CreateShortcut($shortcutPath)
-    if (Test-Path $taxbotExe) {
-      $shortcut.TargetPath = $taxbotExe
-    } else {
-      $electronDistExe = Join-Path $script:repoRoot 'electron-dist\electron.exe'
-      $appPath = Join-Path $script:repoRoot 'electron'
-      if (Test-Path $electronDistExe) {
-        $shortcut.TargetPath = $electronDistExe
-        $shortcut.Arguments = "`"$appPath`""
+    try {
+      $wsh = New-Object -ComObject WScript.Shell
+      $shortcut = $wsh.CreateShortcut($shortcutPath)
+      if (Test-Path $taxbotExe) {
+        $shortcut.TargetPath = $taxbotExe
       } else {
-        $vbsPath = Join-Path $appPath 'start.vbs'
-        $shortcut.TargetPath = "wscript.exe"
-        $shortcut.Arguments = "`"$vbsPath`""
+        $electronDistExe = Join-Path $script:repoRoot 'electron-dist\electron.exe'
+        $appPath = Join-Path $script:repoRoot 'electron'
+        if (Test-Path $electronDistExe) {
+          $shortcut.TargetPath = $electronDistExe
+          $shortcut.Arguments = "`"$appPath`""
+        } else {
+          $vbsPath = Join-Path $appPath 'start.vbs'
+          $shortcut.TargetPath = "wscript.exe"
+          $shortcut.Arguments = "`"$vbsPath`""
+        }
       }
+      $shortcut.WorkingDirectory = $script:repoRoot
+      if (Test-Path $scIconPath) { $shortcut.IconLocation = $scIconPath }
+      $shortcut.Description = "Taxbot - AI Tax Assistant"
+      $shortcut.Save()
+      Write-Log "Desktop shortcut created."
+    } catch {
+      Write-Log "WARNING: Could not create desktop shortcut: $_"
+      Write-Log "You can manually create a shortcut to: $taxbotExe"
     }
-    $shortcut.WorkingDirectory = $script:repoRoot
-    if (Test-Path $scIconPath) { $shortcut.IconLocation = $scIconPath }
-    $shortcut.Description = "Taxbot - AI Tax Assistant"
-    $shortcut.Save()
-    Write-Log "Desktop shortcut created."
     Update-Step 4 "done"
 
     # ===== All done =====
@@ -700,29 +709,33 @@ Read-Host "Press Enter to close"
 
 # ============ Button click handler ============
 $actionBtn.Add_Click({
-  if ($script:installState -eq "done") {
-    # Launch TaxBot
-    $taxbotExe = Join-Path $script:repoRoot 'electron\TaxBot.exe'
-    $vbsPath = Join-Path (Join-Path $script:repoRoot 'electron') 'start.vbs'
-    if (Test-Path $taxbotExe) {
-      Start-Process $taxbotExe -WorkingDirectory $script:repoRoot
-    } elseif (Test-Path $vbsPath) {
-      Start-Process "wscript.exe" -ArgumentList "`"$vbsPath`"" -WorkingDirectory $script:repoRoot
-    }
-    $form.Close()
-  } else {
-    # Start or retry install
-    # Reset steps on retry
-    if ($script:installState -eq "error") {
-      for ($i = 0; $i -lt $script:stepNames.Count; $i++) {
-        $script:stepLabels[$i].Text = [string][char]0x25CB + "  " + $script:stepNames[$i]
-        $script:stepLabels[$i].ForeColor = $clrMuted
-        $script:stepLabels[$i].Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 10)
+  try {
+    if ($script:installState -eq "done") {
+      # Launch TaxBot
+      $taxbotExe = Join-Path $script:repoRoot 'electron\TaxBot.exe'
+      $vbsPath = Join-Path (Join-Path $script:repoRoot 'electron') 'start.vbs'
+      if (Test-Path $taxbotExe) {
+        Start-Process $taxbotExe -WorkingDirectory $script:repoRoot
+      } elseif (Test-Path $vbsPath) {
+        Start-Process "wscript.exe" -ArgumentList "`"$vbsPath`"" -WorkingDirectory $script:repoRoot
       }
-      $progressBar.Value = 0
-      $logBox.Clear()
+      $form.Close()
+    } else {
+      # Start or retry install
+      # Reset steps on retry
+      if ($script:installState -eq "error") {
+        for ($i = 0; $i -lt $script:stepNames.Count; $i++) {
+          $script:stepLabels[$i].Text = [string][char]0x25CB + "  " + $script:stepNames[$i]
+          $script:stepLabels[$i].ForeColor = $clrMuted
+          $script:stepLabels[$i].Font = New-Object System.Drawing.Font("Microsoft YaHei UI", 10)
+        }
+        $progressBar.Value = 0
+        $logBox.Clear()
+      }
+      Do-Install
     }
-    Do-Install
+  } catch {
+    [System.Windows.Forms.MessageBox]::Show("Installation error: $_`n`nPlease try running setup-taxbot.cmd instead.", "Error", "OK", "Error")
   }
 })
 

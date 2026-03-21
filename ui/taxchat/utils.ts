@@ -118,7 +118,7 @@ export function generateWordDoc(text: string): string {
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
       xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><title>Taxbot</title>
+<head><meta charset="utf-8"><title>慧助理</title>
 <style>
   body { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 12pt; line-height: 1.8; color: #333; }
   table { border-collapse: collapse; width: 100%; margin: 8px 0; }
@@ -136,7 +136,7 @@ export function saveMessageAsWord(text: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Taxbot_${generateTimestamp()}.doc`;
+  a.download = `慧助理_${generateTimestamp()}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

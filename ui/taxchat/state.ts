@@ -234,6 +234,13 @@ export const state: AppState = {
   licenseApplyForm: { email: "", phone: "", reason: "", period: "90天" },
   licenseApplying: false,
   licenseApplyResult: null as AppState["licenseApplyResult"],
+  // Setup wizard
+  setupWizardVisible: !localStorage.getItem("taxbot_setup_done"),
+  setupStep: 1,
+  setupApiKey: "",
+  setupModelId: "qwen-plus",
+  setupSaving: false,
+  setupError: null as string | null,
 };
 
 // ─── State Helpers ──────────────────────────────────────────────

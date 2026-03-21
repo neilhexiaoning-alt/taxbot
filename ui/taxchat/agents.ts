@@ -362,7 +362,33 @@ export function parseAgentMentions(text: string): { mentions: AgentMention[]; cl
 
 export function getMentionCandidates(): AgentEntry[] {
   const filter = state.mentionFilter;
-  return state.agentsList.filter(a => !filter || a.name.toLowerCase().includes(filter) || a.id.toLowerCase().includes(filter));
+  const filtered = state.agentsList.filter(a => !filter || a.name.toLowerCase().includes(filter) || a.id.toLowerCase().includes(filter));
+  // Sort: recent mentions first → default → alphabetical
+  const recentIds = state.recentMentionIds;
+  return filtered.sort((a, b) => {
+    const aRecent = recentIds.indexOf(a.id);
+    const bRecent = recentIds.indexOf(b.id);
+    const aHasRecent = aRecent !== -1;
+    const bHasRecent = bRecent !== -1;
+    // Both recently mentioned: sort by recency (lower index = more recent)
+    if (aHasRecent && bHasRecent) return aRecent - bRecent;
+    // Only one is recent: recent first
+    if (aHasRecent && !bHasRecent) return -1;
+    if (!aHasRecent && bHasRecent) return 1;
+    // Neither recent: default first, then alphabetical
+    if (a.isDefault && !b.isDefault) return -1;
+    if (!a.isDefault && b.isDefault) return 1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/** Track a recently @mentioned agent (persisted to localStorage) */
+export function trackRecentMention(agentId: string) {
+  const list = state.recentMentionIds.filter(id => id !== agentId);
+  list.unshift(agentId);
+  if (list.length > 10) list.length = 10;
+  state.recentMentionIds = list;
+  try { localStorage.setItem("taxbot_recent_mentions", JSON.stringify(list)); } catch {}
 }
 
 export function insertAgentMention(agent: AgentEntry) {
@@ -372,6 +398,7 @@ export function insertAgentMention(agent: AgentEntry) {
   state.sidePanel = null;
   state.mentionDropdownVisible = false;
   state.mentionIndex = 0;
+  trackRecentMention(agent.id);
   scheduleRender();
   setTimeout(() => { state.inputRef?.focus(); }, 50);
 }

@@ -32,7 +32,7 @@ export function exportAsMarkdown() {
       lines.push("");
     } else if (msg.type === "assistant") {
       const am = msg as AssistantMessage;
-      const name = am.agentName ? `${am.agentEmoji || "🤖"} ${am.agentName}` : "Taxbot";
+      const name = am.agentName ? `${am.agentEmoji || "🤖"} ${am.agentName}` : "慧助理";
       lines.push(`## ${name}`);
       lines.push(am.text);
       lines.push("");
@@ -59,7 +59,7 @@ export function exportAsHTML() {
       messagesHtml += `<div class="msg user"><div class="role">用户</div><div class="content">${escaped}</div></div>\n`;
     } else if (msg.type === "assistant") {
       const am = msg as AssistantMessage;
-      const name = am.agentName ? `${am.agentEmoji || "🤖"} ${am.agentName}` : "Taxbot";
+      const name = am.agentName ? `${am.agentEmoji || "🤖"} ${am.agentName}` : "慧助理";
       const escaped = escapeHtml(am.text);
       messagesHtml += `<div class="msg assistant"><div class="role">${escapeHtml(name)}</div><div class="content">${escaped}</div></div>\n`;
     }

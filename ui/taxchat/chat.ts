@@ -3,11 +3,11 @@
  */
 
 import type { AppState, AssistantMessage, UserMessage, AgentEntry } from "./types";
-import { state, generateUUID, isAnySending, isSessionBusy, getMessagesForSession, isCurrentSession, scheduleRender } from "./state";
+import { state, generateUUID, isAnySending, isSessionBusy, getMessagesForSession, isCurrentSession, isAgentChatSession, scheduleRender } from "./state";
 import { CONTEXT_MAX_MESSAGES, CONTEXT_MAX_CHARS, BUILTIN_SKILLS, TAX_SKILL_NAMES } from "./constants";
 import { saveMessages, debouncedSaveMessages, saveFavorites, saveMessagesForConversation } from "./persistence";
 import { autoTitleConversation } from "./conversations";
-import { loadAgentMemory, parseAgentMentions } from "./agents";
+import { loadAgentMemory, parseAgentMentions, trackRecentMention } from "./agents";
 import {
   showToast,
   readFileAsDataUrl,
@@ -41,16 +41,16 @@ export function buildConversationContext(excludeSessionKeys?: string[], forAgent
           isRelevant = um.targetAgentNames.includes(forAgentName);
         }
       } else {
-        line = `【用户→Taxbot】${um.text}`;
+        line = `【用户→慧助理】${um.text}`;
         isRelevant = true;
       }
     } else {
       const aMsg = msg as AssistantMessage;
-      const name = aMsg.agentName || "Taxbot";
+      const name = aMsg.agentName || "慧助理";
       const emoji = aMsg.agentEmoji || "";
       let text = msg.text;
 
-      if (forAgentName && name !== forAgentName && name !== "Taxbot") {
+      if (forAgentName && name !== forAgentName && name !== "慧助理") {
         isRelevant = false;
         text = text.length > 80 ? text.slice(0, 80) + "..." : text;
       } else if (text.length > 2000) {
@@ -73,7 +73,7 @@ export function buildConversationContext(excludeSessionKeys?: string[], forAgent
 
   const header = forAgentName
     ? `【以下是对话记录。标有 ★ 的是与你（${forAgentName}）直接相关的消息，其余为其他智能体的简要记录。你只需回复发给你的消息。】`
-    : `【以下是当前群组对话记录。每条用户消息标注了发送目标（如"用户→Taxbot"表示发给Taxbot的）。你只需回复发给你的消息，不要回复发给其他智能体的消息。你可以参考对话上下文来理解背景，但不要主动回答别人的问题。】`;
+    : `【以下是当前群组对话记录。每条用户消息标注了发送目标（如"用户→慧助理"表示发给慧助理的）。你只需回复发给你的消息，不要回复发给其他智能体的消息。你可以参考对话上下文来理解背景，但不要主动回答别人的问题。】`;
 
   return `${header}\n\n${lines.join("\n\n")}`;
 }
@@ -88,11 +88,200 @@ export function isBadResponse(text: string): boolean {
 function updateCollabTaskStatus(agentId: string | null, status: "done" | "error") {
   if (!state.collaborationTasks || !agentId) return;
   const task = state.collaborationTasks.find(t => t.agentId === agentId);
-  if (task) task.status = status;
+  if (!task) return;
+  task.status = status;
+
+  // Capture the agent's response text for sequential coordination
+  if (status === "done") {
+    let responseText = "";
+    for (let i = state.messages.length - 1; i >= 0; i--) {
+      const m = state.messages[i];
+      if (m.type === "assistant" && (m as AssistantMessage).agentId === agentId) {
+        responseText = m.text;
+        break;
+      }
+    }
+    task.result = responseText;
+  }
+
+  // Check if there are more agents in the queue to dispatch
+  if (state.collabQueue && state.collabQueue.length > 0) {
+    dispatchNextCollabAgent();
+    return;
+  }
+
+  // All agents dispatched — check if all done
   const allDone = state.collaborationTasks.every(t => t.status === "done" || t.status === "error");
   if (allDone) {
-    setTimeout(() => { state.collaborationTasks = null; scheduleRender(); }, 3000);
+    synthesizeCollabResults();
   }
+}
+
+/** Dispatch the next agent in the sequential collaboration queue */
+function dispatchNextCollabAgent() {
+  if (!state.collabQueue || state.collabQueue.length === 0 || !state.client) return;
+
+  const next = state.collabQueue.shift()!;
+  if (state.collabQueue.length === 0) state.collabQueue = null;
+
+  const agentName = next.agent?.name || next.agentId;
+  const mainResponse = state.collabMainResponse || "";
+
+  // Update collab task status to "working"
+  const collabTask = state.collaborationTasks?.find(t => t.agentId === next.agentId);
+  if (collabTask) collabTask.status = "working";
+
+  // Build context from previously completed agents' results
+  const completedResults: string[] = [];
+  if (state.collaborationTasks) {
+    for (const ct of state.collaborationTasks) {
+      if (ct.status === "done" && ct.result) {
+        completedResults.push(`【${ct.agentEmoji} ${ct.agentName} 的结果】\n${ct.result.length > 800 ? ct.result.slice(0, 800) + "...（已截断）" : ct.result}`);
+      }
+    }
+  }
+
+  const assignedTask = extractAgentTask(mainResponse, agentName);
+  let agentMessage: string;
+  if (assignedTask) {
+    agentMessage = `${assignedTask}\n\n（以上是协调者为你分配的任务。用户的原始请求：${state.collabFinalMessage || ""}）`;
+  } else {
+    agentMessage = `协调者的分析如下：\n${mainResponse}\n\n请根据你的专长，回应用户的请求：${state.collabFinalMessage || ""}`;
+  }
+
+  // Append previous agents' results as context
+  if (completedResults.length > 0) {
+    agentMessage += `\n\n---\n【其他智能体已完成的工作】\n${completedResults.join("\n\n")}\n---\n请参考以上结果，避免重复，在此基础上完成你的任务。如需补充或修正其他智能体的内容也可以。`;
+  }
+
+  agentMessage += `\n\n提示：如需其他智能体协助，请使用 @智能体名称 格式标注。`;
+
+  // Load agent memory
+  const doDispatch = async () => {
+    if (next.agentId) {
+      const memory = await loadAgentMemory(next.agentId);
+      if (memory) {
+        agentMessage = `【智能体记忆】\n${memory}\n---\n\n${agentMessage}`;
+      }
+    }
+
+    const conversationContext = buildConversationContext([], agentName);
+    if (conversationContext) {
+      agentMessage = `${conversationContext}\n\n---\n\n${agentMessage}`;
+    }
+
+    state.activeRuns.set(next.sessionKey, {
+      runId: null,
+      sessionKey: next.sessionKey,
+      agentId: next.agentId,
+      agentName: next.agent?.name || null,
+      agentEmoji: next.agent?.emoji || null,
+      agentAvatarUrl: next.agent?.avatarUrl || null,
+      thinkingLabel: "正在思考...",
+      toolsActive: 0,
+      _retryCount: 0,
+      reactive: false,
+    });
+
+    const idempotencyKey = generateUUID();
+    const requestPayload: any = {
+      sessionKey: next.sessionKey,
+      message: agentMessage,
+      deliver: false,
+      idempotencyKey,
+    };
+    if (state.collabApiAttachments && state.collabApiAttachments.length > 0) {
+      requestPayload.attachments = state.collabApiAttachments;
+    }
+
+    console.log(`[Orchestration-Seq] Dispatching to ${agentName} (${next.sessionKey})`);
+    state.client!
+      .request("chat.send", requestPayload)
+      .then((r: unknown) => { console.log(`[Orchestration-Seq] ${agentName} accepted:`, r); })
+      .catch((err) => {
+        state.messages.push({ type: "assistant", text: `${agentName} 任务发送失败：${String(err)}`, timestamp: Date.now(), id: generateUUID() });
+        state.activeRuns.delete(next.sessionKey);
+        updateCollabTaskStatus(next.agentId, "error");
+        scheduleRender();
+      });
+    scheduleRender();
+  };
+
+  doDispatch();
+}
+
+/** After all collaboration agents finish, synthesize results via the main agent */
+function synthesizeCollabResults() {
+  if (!state.collaborationTasks || !state.client) {
+    state.collaborationTasks = null;
+    cleanupCollabState();
+    scheduleRender();
+    return;
+  }
+
+  const doneResults = state.collaborationTasks.filter(t => t.status === "done" && t.result);
+  if (doneResults.length === 0) {
+    state.collaborationTasks = null;
+    cleanupCollabState();
+    scheduleRender();
+    return;
+  }
+
+  // If only one agent succeeded, no need to synthesize
+  if (doneResults.length === 1) {
+    setTimeout(() => { state.collaborationTasks = null; cleanupCollabState(); scheduleRender(); }, 2000);
+    return;
+  }
+
+  // Build synthesis prompt
+  const resultParts = doneResults.map(t =>
+    `【${t.agentEmoji} ${t.agentName}】\n${t.result}`
+  ).join("\n\n");
+
+  const synthesisPrompt = `以下是各智能体的协作结果：\n\n${resultParts}\n\n请综合以上所有智能体的内容，给用户一个完整、连贯的最终回答。如有冲突之处请指出并给出你的建议。`;
+
+  const conversationContext = buildConversationContext([]);
+  let mainMessage = synthesisPrompt;
+  if (conversationContext) {
+    mainMessage = `${conversationContext}\n\n---\n\n${synthesisPrompt}`;
+  }
+
+  // Mark all collab tasks as done, clear after delay
+  setTimeout(() => { state.collaborationTasks = null; scheduleRender(); }, 2000);
+
+  state.activeRuns.set(state.sessionKey, {
+    runId: null,
+    sessionKey: state.sessionKey,
+    agentId: null,
+    agentName: null,
+    agentEmoji: null,
+    agentAvatarUrl: null,
+    thinkingLabel: "正在综合结果...",
+    toolsActive: 0,
+    _retryCount: 0,
+    reactive: false,
+  });
+
+  const idempotencyKey = generateUUID();
+  console.log("[Orchestration-Seq] Synthesizing results via main agent");
+  state.client
+    .request("chat.send", { sessionKey: state.sessionKey, message: mainMessage, deliver: false, idempotencyKey })
+    .then((r: unknown) => { console.log("[Orchestration-Seq] Synthesis accepted:", r); })
+    .catch((err) => {
+      state.messages.push({ type: "assistant", text: `综合结果失败：${String(err)}`, timestamp: Date.now(), id: generateUUID() });
+      state.activeRuns.delete(state.sessionKey);
+      scheduleRender();
+    });
+
+  cleanupCollabState();
+  scheduleRender();
+}
+
+function cleanupCollabState() {
+  state.collabQueue = null;
+  state.collabFinalMessage = null;
+  state.collabApiAttachments = null;
+  state.collabMainResponse = null;
 }
 
 // ─── Finish Sending ────────────────────────────────────────────
@@ -100,7 +289,8 @@ export function finishSendingForRun(sessionKey: string) {
   const run = state.activeRuns.get(sessionKey);
   if (!run) return;
 
-  const isBg = !isCurrentSession(sessionKey);
+  // Agent chat sessions (agent:xxx:main) are part of the current conversation, not background
+  const isBg = !isCurrentSession(sessionKey) && !isAgentChatSession(sessionKey);
   const msgs = getMessagesForSession(sessionKey);
 
   const recentAssistant = msgs.filter(m => m.type === "assistant");
@@ -132,8 +322,15 @@ export function finishSendingForRun(sessionKey: string) {
     if (sessionKey === state.sessionKey && state.pendingDispatch) {
       dispatchPendingAgents();
     }
-    if (!run.reactive && run.agentId) {
+    // Skip reactive mentions during sequential collaboration (queue handles coordination)
+    const inCollabFlow = state.collaborationTasks !== null || state.collabQueue !== null;
+    if (!run.reactive && run.agentId && !inCollabFlow) {
       checkReactiveMentions(run);
+    }
+    // Auto-fill @agent in draft if last single mention agent just finished and draft is empty
+    if (!isBg && state.lastSingleMentionAgent && !state.draft.trim() && !inCollabFlow) {
+      const agentName = state.lastSingleMentionAgent.name;
+      state.draft = `@${agentName} `;
     }
     scheduleRender();
     return;
@@ -174,22 +371,43 @@ export function finishSendingForRun(sessionKey: string) {
     return;
   }
 
+  // All responses are bad and retries exhausted — remove bad messages and show fallback
+  const cleaned = msgs.filter(m => {
+    if (m.type === "assistant" && isBadResponse((m as any).text || "")) return false;
+    return true;
+  });
+  const agentLabel = run.agentName ? `${run.agentEmoji || "🤖"}${run.agentName}` : "智能体";
+  cleaned.push({
+    type: "assistant",
+    text: `${agentLabel}暂时无法回复，请稍后重试。`,
+    timestamp: Date.now(),
+    id: generateUUID(),
+    agentId: run.agentId || undefined,
+    agentEmoji: run.agentEmoji || undefined,
+    agentName: run.agentName || undefined,
+    agentAvatarUrl: run.agentAvatarUrl || undefined,
+  } as AssistantMessage);
+
   state.activeRuns.delete(sessionKey);
-  updateCollabTaskStatus(run.agentId, "done");
+  updateCollabTaskStatus(run.agentId, "error");
   if (isBg) {
     const convId = sessionKey.startsWith("taxchat-") ? sessionKey.slice(8) : sessionKey;
-    saveMessagesForConversation(convId, msgs);
+    state.backgroundMessages.set(convId, cleaned);
+    saveMessagesForConversation(convId, cleaned);
     state.unreadConversations.add(convId);
     const conv = state.conversations.find(c => c.id === convId);
-    if (conv) { conv.updatedAt = Date.now(); conv.messageCount = msgs.length; }
+    if (conv) { conv.updatedAt = Date.now(); conv.messageCount = cleaned.length; }
   } else {
+    state.messages = cleaned;
     debouncedSaveMessages();
   }
 
   if (sessionKey === state.sessionKey && state.pendingDispatch) {
     dispatchPendingAgents();
   }
-  if (!run.reactive && run.agentId) {
+  // Skip reactive mentions during sequential collaboration
+  const inCollabFlow2 = state.collaborationTasks !== null || state.collabQueue !== null;
+  if (!run.reactive && run.agentId && !inCollabFlow2) {
     checkReactiveMentions(run);
   }
 
@@ -198,8 +416,8 @@ export function finishSendingForRun(sessionKey: string) {
 
 // ─── Fetch Complete Response (Polling with AbortController + Timeout) ──
 const POLL_INTERVAL = 1500;
-const STALE_TIMEOUT = 10_000;   // 10s without content change → complete
-const MAX_TOTAL_TIME = 120_000; // 2 min absolute timeout
+const STALE_TIMEOUT = 20_000;   // 20s without content change → complete
+const MAX_TOTAL_TIME = 180_000; // 3 min absolute timeout
 const pollingControllers = new Map<string, AbortController>();
 
 /** Extract assistant text from chat.history result */
@@ -389,10 +607,14 @@ async function dispatchPendingAgents() {
     return;
   }
 
-  console.log("[Orchestration] Main responded, dispatching to agents:", pending.targets.map(t => t.agent?.name));
+  console.log("[Orchestration-Seq] Main responded, dispatching agents sequentially:", pending.targets.map(t => t.agent?.name));
 
+  // Build collaboration task list (all start as "pending")
   const collabTasks: NonNullable<AppState["collaborationTasks"]> = [];
+  const freeTargets: typeof pending.targets = [];
   for (const t of pending.targets) {
+    if (isSessionBusy(t.sessionKey)) continue;
+    freeTargets.push(t);
     const agentName = t.agent?.name || t.agentId;
     const task = extractAgentTask(mainResponse, agentName);
     collabTasks.push({
@@ -400,71 +622,96 @@ async function dispatchPendingAgents() {
       agentName,
       agentEmoji: t.agent?.emoji || "🤖",
       task: task ? (task.length > 60 ? task.slice(0, 60) + "..." : task) : "处理用户请求",
-      status: "working",
+      status: "pending",
     });
   }
+  if (freeTargets.length === 0) return;
+
   state.collaborationTasks = collabTasks;
 
-  for (const t of pending.targets) {
-    if (isSessionBusy(t.sessionKey)) continue;
+  // Store collaboration context for sequential dispatch
+  state.collabMainResponse = mainResponse;
+  state.collabFinalMessage = pending.finalMessage;
+  state.collabApiAttachments = [...pending.apiAttachments];
 
-    const agentName = t.agent?.name || t.agentId;
-    const assignedTask = extractAgentTask(mainResponse, agentName);
+  // Queue all targets, then dispatch the first one
+  state.collabQueue = freeTargets.slice(1); // rest go into queue
+  if (state.collabQueue.length === 0) state.collabQueue = null;
 
-    let agentMessage: string;
-    if (assignedTask) {
-      agentMessage = `${assignedTask}\n\n（以上是协调者为你分配的任务。用户的原始请求：${pending.finalMessage}）\n\n提示：如需其他智能体协助，请使用 @智能体名称 格式标注。`;
-    } else {
-      agentMessage = `协调者的分析如下：\n${mainResponse}\n\n请根据你的专长，回应用户的请求：${pending.finalMessage}\n\n提示：如需其他智能体协助，请使用 @智能体名称 格式标注。`;
-    }
+  // Dispatch the first agent immediately
+  const first = freeTargets[0];
+  const firstTask = collabTasks.find(t => t.agentId === first.agentId);
+  if (firstTask) firstTask.status = "working";
 
-    if (t.agentId) {
-      const memory = await loadAgentMemory(t.agentId);
-      if (memory) {
-        agentMessage = `【智能体记忆】\n${memory}\n---\n\n${agentMessage}`;
-      }
-    }
-
-    const conversationContext = buildConversationContext([], agentName);
-    if (conversationContext) {
-      agentMessage = `${conversationContext}\n\n---\n\n${agentMessage}`;
-    }
-
-    state.activeRuns.set(t.sessionKey, {
-      runId: null,
-      sessionKey: t.sessionKey,
-      agentId: t.agentId,
-      agentName: t.agent?.name || null,
-      agentEmoji: t.agent?.emoji || null,
-      agentAvatarUrl: t.agent?.avatarUrl || null,
-      thinkingLabel: "正在思考...",
-      toolsActive: 0,
-      _retryCount: 0,
-      reactive: false,
-    });
-
-    const idempotencyKey = generateUUID();
-    const requestPayload: any = {
-      sessionKey: t.sessionKey,
-      message: agentMessage,
-      deliver: false,
-      idempotencyKey,
-    };
-    if (pending.apiAttachments.length > 0) {
-      requestPayload.attachments = pending.apiAttachments;
-    }
-
-    console.log(`[Orchestration] Dispatching to ${agentName} (${t.sessionKey})`);
-    state.client
-      .request("chat.send", requestPayload)
-      .then((r: unknown) => { console.log(`[Orchestration] ${agentName} accepted:`, r); })
-      .catch((err) => {
-        state.messages.push({ type: "assistant", text: `${agentName} 任务发送失败：${String(err)}`, timestamp: Date.now(), id: generateUUID() });
-        state.activeRuns.delete(t.sessionKey);
-        scheduleRender();
-      });
-  }
+  dispatchNextCollabAgent_first(first, mainResponse, pending.finalMessage, pending.apiAttachments);
   scheduleRender();
+}
+
+/** Dispatch the very first agent in a collaboration (called from dispatchPendingAgents) */
+async function dispatchNextCollabAgent_first(
+  target: { sessionKey: string; agentId: string; agent: AgentEntry | null },
+  mainResponse: string,
+  finalMessage: string,
+  apiAttachments: any[],
+) {
+  if (!state.client) return;
+
+  const agentName = target.agent?.name || target.agentId;
+  const assignedTask = extractAgentTask(mainResponse, agentName);
+
+  let agentMessage: string;
+  if (assignedTask) {
+    agentMessage = `${assignedTask}\n\n（以上是协调者为你分配的任务。用户的原始请求：${finalMessage}）\n\n提示：如需其他智能体协助，请使用 @智能体名称 格式标注。`;
+  } else {
+    agentMessage = `协调者的分析如下：\n${mainResponse}\n\n请根据你的专长，回应用户的请求：${finalMessage}\n\n提示：如需其他智能体协助，请使用 @智能体名称 格式标注。`;
+  }
+
+  if (target.agentId) {
+    const memory = await loadAgentMemory(target.agentId);
+    if (memory) {
+      agentMessage = `【智能体记忆】\n${memory}\n---\n\n${agentMessage}`;
+    }
+  }
+
+  const conversationContext = buildConversationContext([], agentName);
+  if (conversationContext) {
+    agentMessage = `${conversationContext}\n\n---\n\n${agentMessage}`;
+  }
+
+  state.activeRuns.set(target.sessionKey, {
+    runId: null,
+    sessionKey: target.sessionKey,
+    agentId: target.agentId,
+    agentName: target.agent?.name || null,
+    agentEmoji: target.agent?.emoji || null,
+    agentAvatarUrl: target.agent?.avatarUrl || null,
+    thinkingLabel: "正在思考...",
+    toolsActive: 0,
+    _retryCount: 0,
+    reactive: false,
+  });
+
+  const idempotencyKey = generateUUID();
+  const requestPayload: any = {
+    sessionKey: target.sessionKey,
+    message: agentMessage,
+    deliver: false,
+    idempotencyKey,
+  };
+  if (apiAttachments.length > 0) {
+    requestPayload.attachments = apiAttachments;
+  }
+
+  console.log(`[Orchestration-Seq] Dispatching first agent: ${agentName} (${target.sessionKey})`);
+  state.client
+    .request("chat.send", requestPayload)
+    .then((r: unknown) => { console.log(`[Orchestration-Seq] ${agentName} accepted:`, r); })
+    .catch((err) => {
+      state.messages.push({ type: "assistant", text: `${agentName} 任务发送失败：${String(err)}`, timestamp: Date.now(), id: generateUUID() });
+      state.activeRuns.delete(target.sessionKey);
+      updateCollabTaskStatus(target.agentId, "error");
+      scheduleRender();
+    });
 }
 
 /** Detect explicit @mention — avoids false positives from short agent names appearing in regular text */
@@ -743,7 +990,7 @@ export async function handleSend() {
 
   const replyToMsg = state.replyingTo;
   if (replyToMsg) {
-    const quoteSender = replyToMsg.type === "user" ? "用户" : ((replyToMsg as AssistantMessage).agentName || "Taxbot");
+    const quoteSender = replyToMsg.type === "user" ? "用户" : ((replyToMsg as AssistantMessage).agentName || "慧助理");
     const quoteText = replyToMsg.text.length > 300 ? replyToMsg.text.slice(0, 300) + "..." : replyToMsg.text;
     messageToSend = `【引用 ${quoteSender} 的消息】：${quoteText}\n\n${messageToSend}`;
   }
@@ -764,6 +1011,16 @@ export async function handleSend() {
   saveMessages();
 
   state.replyingTo = null;
+
+  // Track recently mentioned agents + remember single-agent mention for auto-fill
+  for (const m of mentions) trackRecentMention(m.agentId);
+  if (nonDefaultTargets.length === 1) {
+    const t = nonDefaultTargets[0];
+    state.lastSingleMentionAgent = { id: t.agentId, name: t.agent?.name || t.agentId };
+  } else {
+    state.lastSingleMentionAgent = null;
+  }
+
   state.draft = "";
   scheduleRender();
 
@@ -936,6 +1193,11 @@ export function abortRun(sessionKey: string) {
   if (sessionKey === state.sessionKey && state.pendingDispatch) {
     state.pendingDispatch = null;
   }
+  // Clean up collaboration state if aborting a collab agent
+  if (state.collaborationTasks) {
+    state.collaborationTasks = null;
+    cleanupCollabState();
+  }
   scheduleRender();
 }
 
@@ -947,6 +1209,8 @@ export function handleAbort() {
   }
   state.activeRuns.clear();
   state.pendingDispatch = null;
+  state.collaborationTasks = null;
+  cleanupCollabState();
   scheduleRender();
 }
 
@@ -956,6 +1220,9 @@ export function doClearAll() {
   state.draft = "";
   state.activeRuns.clear();
   state.pendingDispatch = null;
+  state.collaborationTasks = null;
+  state.lastSingleMentionAgent = null;
+  cleanupCollabState();
   state.favorites.clear();
   state.sidePanel = null;
   state.confirmingClear = false;

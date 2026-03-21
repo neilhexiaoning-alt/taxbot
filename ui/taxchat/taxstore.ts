@@ -5,6 +5,7 @@
 import { state, generateUUID, scheduleRender } from "./state";
 import { showToast, addNotification } from "./utils";
 import { saveCustomSkills } from "./persistence";
+import { initRental } from "./rental";
 import {
   tsLogin,
   tsGetMe,
@@ -54,8 +55,9 @@ export async function loginTaxStore(email: string, password: string) {
     state.taxstoreConnected = true;
     localStorage.setItem(TOKEN_KEY, token);
 
-    // Load first page of skills
+    // Load first page of skills + sync rental listings
     await fetchSkills(1);
+    initRental();
     showToast(`已连接 TaxStore: ${user.name}`);
   } catch (err: any) {
     state.taxstoreError = err.message || "登录失败";

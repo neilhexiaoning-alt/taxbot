@@ -294,4 +294,11 @@ export interface AppState {
   licenseApplyForm: { email: string; phone: string; reason: string; period: string };
   licenseApplying: boolean;
   licenseApplyResult: "success" | "error" | null;
+  // Setup wizard
+  setupWizardVisible: boolean;
+  setupStep: number;
+  setupApiKey: string;
+  setupModelId: string;
+  setupSaving: boolean;
+  setupError: string | null;
 }

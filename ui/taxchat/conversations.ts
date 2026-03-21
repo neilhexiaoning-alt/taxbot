@@ -78,6 +78,7 @@ export function switchConversation(convId: string) {
 
   state.replyingTo = null;
   state.pendingDispatch = null;
+  state.lastSingleMentionAgent = null;
 
   state.currentConversationId = convId;
   state.sessionKey = `taxchat-${convId}`;

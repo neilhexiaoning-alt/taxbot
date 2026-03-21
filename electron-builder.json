@@ -1,6 +1,6 @@
 {
   "appId": "com.openclaw.taxchat",
-  "productName": "Taxbot",
+  "productName": "慧助理",
   "copyright": "Copyright © 2026",
   "extraMetadata": {
     "main": "electron/main.cjs",
@@ -9,7 +9,6 @@
   "asar": false,
   "compression": "store",
   "npmRebuild": false,
-  "afterPack": "./scripts/fix-pnpm-links.cjs",
   "directories": {
     "output": "dist-electron"
   },
@@ -20,12 +19,25 @@
     "scripts/run-node.mjs",
     "skills/**/*",
     "packages/**/*",
+    "extensions/**/*",
     "node_modules/**/*",
     "!dist/OpenClaw.app",
     "!**/*.ts",
+    "extensions/**/*.ts",
     "!**/*.map",
     "!**/test/**",
-    "!**/*.test.js"
+    "!**/*.test.js",
+    "!**/*.md",
+    "!**/CHANGELOG*",
+    "!**/LICENSE*",
+    "!**/README*",
+    "!**/.npmignore",
+    "!**/tsconfig*.json",
+    "!**/*.tsbuildinfo",
+    "!**/docs/**",
+    "docs/reference/templates/**",
+    "!**/example/**",
+    "!**/examples/**"
   ],
   "extraResources": [
     {
@@ -50,13 +62,15 @@
     "allowElevation": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "TaxChat",
+    "shortcutName": "慧助理",
+    "installerHeaderIcon": "ui/assets/icon.ico",
     "installerIcon": "ui/assets/icon.ico",
     "uninstallerIcon": "ui/assets/icon.ico",
     "deleteAppDataOnUninstall": false,
     "displayLanguageSelector": false,
     "language": "2052",
-    "perMachine": false
+    "perMachine": true,
+    "include": "scripts/installer.nsh"
   },
   "portable": {
     "artifactName": "${productName}-${version}-portable.exe"
